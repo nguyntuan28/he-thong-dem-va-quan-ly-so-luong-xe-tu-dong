@@ -1,4 +1,4 @@
-![Poster dự án](nguyntuan.jpg)
+![Poster dự án](nguyentuan.jpg)
 # 🚗 Traffic Flow Monitoring System — YOLOv8 + Violation Detection
 
 Hệ thống giám sát lưu lượng giao thông tự động sử dụng **YOLOv8** + **OpenCV** + **Violation Detection** + **Evidence Photos**.
