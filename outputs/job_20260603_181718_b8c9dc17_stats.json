@@ -1,0 +1,134 @@
+{
+  "total_frames": 502,
+  "fps": 29.379655630955874,
+  "video_duration": 17.086653645833334,
+  "total_vehicles_in": 1,
+  "total_vehicles_out": 0,
+  "current_vehicles": 1,
+  "capacity": 50,
+  "vehicle_details": {
+    "truck": {
+      "in": 1,
+      "out": 0
+    }
+  },
+  "average_flow_rate": 0.0,
+  "peak_flow_rate": 0.0,
+  "traffic_density": 29.04382470119522,
+  "congestion_level": "HEAVY",
+  "total_vehicles": 1,
+  "total_violations": 7,
+  "severe_violations": 0,
+  "moderate_violations": 0,
+  "minor_violations": 7,
+  "violation_rate": 700.0,
+  "recent_violations": [
+    {
+      "timestamp": "18:18:26",
+      "track_id": 106,
+      "vehicle_type": "car",
+      "severity": "MINOR"
+    },
+    {
+      "timestamp": "18:18:26",
+      "track_id": 82,
+      "vehicle_type": "car",
+      "severity": "MINOR"
+    },
+    {
+      "timestamp": "18:18:27",
+      "track_id": 152,
+      "vehicle_type": "motorcycle",
+      "severity": "MINOR"
+    },
+    {
+      "timestamp": "18:18:28",
+      "track_id": 157,
+      "vehicle_type": "motorcycle",
+      "severity": "MINOR"
+    },
+    {
+      "timestamp": "18:18:34",
+      "track_id": 163,
+      "vehicle_type": "motorcycle",
+      "severity": "MINOR"
+    },
+    {
+      "timestamp": "18:18:36",
+      "track_id": 165,
+      "vehicle_type": "motorcycle",
+      "severity": "MINOR"
+    },
+    {
+      "timestamp": "18:18:37",
+      "track_id": 167,
+      "vehicle_type": "motorcycle",
+      "severity": "MINOR"
+    }
+  ],
+  "all_violations": [
+    {
+      "violation_id": 0,
+      "timestamp": "18:18:26",
+      "track_id": 106,
+      "vehicle_type": "car",
+      "frame_number": 382,
+      "severity": "MINOR",
+      "image_path": "/api/violation/image/job_20260603_181718_b8c9dc17/0"
+    },
+    {
+      "violation_id": 1,
+      "timestamp": "18:18:26",
+      "track_id": 82,
+      "vehicle_type": "car",
+      "frame_number": 382,
+      "severity": "MINOR",
+      "image_path": "/api/violation/image/job_20260603_181718_b8c9dc17/1"
+    },
+    {
+      "violation_id": 2,
+      "timestamp": "18:18:27",
+      "track_id": 152,
+      "vehicle_type": "motorcycle",
+      "frame_number": 383,
+      "severity": "MINOR",
+      "image_path": "/api/violation/image/job_20260603_181718_b8c9dc17/2"
+    },
+    {
+      "violation_id": 3,
+      "timestamp": "18:18:28",
+      "track_id": 157,
+      "vehicle_type": "motorcycle",
+      "frame_number": 390,
+      "severity": "MINOR",
+      "image_path": "/api/violation/image/job_20260603_181718_b8c9dc17/3"
+    },
+    {
+      "violation_id": 4,
+      "timestamp": "18:18:34",
+      "track_id": 163,
+      "vehicle_type": "motorcycle",
+      "frame_number": 429,
+      "severity": "MINOR",
+      "image_path": "/api/violation/image/job_20260603_181718_b8c9dc17/4"
+    },
+    {
+      "violation_id": 5,
+      "timestamp": "18:18:36",
+      "track_id": 165,
+      "vehicle_type": "motorcycle",
+      "frame_number": 440,
+      "severity": "MINOR",
+      "image_path": "/api/violation/image/job_20260603_181718_b8c9dc17/5"
+    },
+    {
+      "violation_id": 6,
+      "timestamp": "18:18:37",
+      "track_id": 167,
+      "vehicle_type": "motorcycle",
+      "frame_number": 448,
+      "severity": "MINOR",
+      "image_path": "/api/violation/image/job_20260603_181718_b8c9dc17/6"
+    }
+  ]
+}

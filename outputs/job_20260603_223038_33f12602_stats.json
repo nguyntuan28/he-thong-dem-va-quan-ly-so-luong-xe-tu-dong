@@ -1,0 +1,22 @@
+{
+  "total_frames": 823,
+  "fps": 24.0,
+  "video_duration": 34.291666666666664,
+  "total_vehicles_in": 0,
+  "total_vehicles_out": 0,
+  "current_vehicles": 0,
+  "capacity": 50,
+  "vehicle_details": {},
+  "average_flow_rate": 0.0,
+  "peak_flow_rate": 0.0,
+  "traffic_density": 0.07290400972053462,
+  "congestion_level": "HEAVY",
+  "total_vehicles": 0,
+  "total_violations": 0,
+  "severe_violations": 0,
+  "moderate_violations": 0,
+  "minor_violations": 0,
+  "violation_rate": 0,
+  "recent_violations": [],
+  "all_violations": []
+}

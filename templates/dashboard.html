@@ -1,0 +1,3092 @@
+<!-- FORCE RELOAD: v1.0.0.7 -->
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống xử lý video - Phát hiện xe YOLOv8</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0d14;
+            --panel: #111520;
+            --border: #1e2535;
+            --accent: #00e0ff;
+            --green: #00e87a;
+            --orange: #ff7c1f;
+            --red: #ff2d5e;
+            --yellow: #ffd040;
+            --text: #d0d8e8;
+            --dim: #556070;
+            --font-mono: 'Share Tech Mono', monospace;
+            --font-ui: 'Barlow Condensed', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-ui);
+            font-size: 14px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9999;
+            background: repeating-linear-gradient(0deg,
+                transparent, transparent 2px, rgba(0, 0, 0, .08) 2px, rgba(0, 0, 0, .08) 4px);
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 28px;
+            border-bottom: 1px solid var(--border);
+            background: linear-gradient(90deg, #060810 0%, #0e1320 100%);
+            position: relative;
+        }
+
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #003a4a, #00b8d9);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .logo-text {
+            line-height: 1.1;
+        }
+
+        .logo-title {
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        .logo-sub {
+            font-size: 11px;
+            color: var(--dim);
+            letter-spacing: 3px;
+        }
+
+        .main-container {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .section {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .tab {
+            padding: 8px 16px;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            color: var(--dim);
+            border: 1px solid var(--border);
+            background: transparent;
+            border-radius: 6px;
+            transition: all .2s;
+            font-weight: 600;
+        }
+
+        .tab:hover {
+            color: var(--text);
+            border-color: var(--accent);
+        }
+
+        .tab.active {
+            color: var(--accent);
+            border-color: var(--accent);
+            background: rgba(0, 224, 255, .08);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Upload Section */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            transition: all .2s;
+            cursor: pointer;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent);
+            background: rgba(0, 224, 255, .03);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--green);
+            background: rgba(0, 232, 122, .1);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .upload-text {
+            font-size: 14px;
+            color: var(--text);
+            margin-bottom: 10px;
+        }
+
+        .upload-hint {
+            font-size: 12px;
+            color: var(--dim);
+        }
+
+        .hidden-input {
+            display: none;
+        }
+
+        /* Parameters */
+        .params-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .param-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .param-label {
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: var(--dim);
+            text-transform: uppercase;
+        }
+
+        .param-input {
+            padding: 8px 12px;
+            background: #0d1220;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 13px;
+        }
+
+        .param-input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .range-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .range-input {
+            flex: 1;
+        }
+
+        .range-value {
+            min-width: 40px;
+            text-align: right;
+            font-family: var(--font-mono);
+            color: var(--accent);
+        }
+
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        button {
+            padding: 10px 24px;
+            border: 1px solid;
+            border-radius: 6px;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all .2s;
+            font-family: var(--font-ui);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #003a4a, #00b8d9);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #004460, #00d4ff);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 224, 255, .1);
+        }
+
+        .btn-success {
+            background: rgba(0, 232, 122, .15);
+            color: var(--green);
+            border-color: var(--green);
+        }
+
+        .btn-success:hover {
+            background: rgba(0, 232, 122, .25);
+        }
+
+        .btn-danger {
+            background: rgba(255, 45, 94, .15);
+            color: var(--red);
+            border-color: var(--red);
+        }
+
+        .btn-danger:hover {
+            background: rgba(255, 45, 94, .25);
+        }
+
+        /* Job List */
+        .job-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .job-item {
+            background: #0d1220;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            animation: slideIn .3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        .job-icon {
+            font-size: 24px;
+        }
+
+        .job-info {
+            flex: 1;
+        }
+
+        .job-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 4px;
+            word-break: break-all;
+        }
+
+        .job-status {
+            font-size: 11px;
+            color: var(--dim);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 9px;
+        }
+
+        .status-queued {
+            background: rgba(255, 208, 64, .15);
+            color: var(--yellow);
+        }
+
+        .status-processing {
+            background: rgba(0, 224, 255, .15);
+            color: var(--accent);
+        }
+
+        .status-completed {
+            background: rgba(0, 232, 122, .15);
+            color: var(--green);
+        }
+
+        .status-error {
+            background: rgba(255, 45, 94, .15);
+            color: var(--red);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--green), var(--accent));
+            width: 0%;
+            transition: width .3s ease;
+        }
+
+        .job-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .job-actions button {
+            padding: 6px 12px;
+            font-size: 10px;
+        }
+
+        /* Results Section */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            margin-bottom: 20px;
+        }
+
+        .result-card {
+            background: #0d1220;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+            text-align: center;
+        }
+
+        .result-value {
+            font-size: 24px;
+            font-weight: 800;
+            font-family: var(--font-mono);
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        .result-label {
+            font-size: 11px;
+            color: var(--dim);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: var(--dim);
+        }
+
+        .video-preview {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .video-preview video {
+            max-width: 100%;
+            max-height: 600px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, .8);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .modal-icon {
+            font-size: 48px;
+            margin-bottom: 14px;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .modal-message {
+            font-size: 13px;
+            color: var(--text);
+            margin-bottom: 20px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .scrollbar::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 2px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--dim);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 14px;
+            opacity: 0.5;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin .6s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">🎥</div>
+            <div class="logo-text">
+                <div class="logo-title">SmartPark — Video Processor</div>
+                <div class="logo-sub">HỆ THỐNG XỬ LÝ VIDEO VÀ PHÁT HIỆN XE TƯƠNG TỰ</div>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('upload')">📤 UPLOAD VIDEO</button>
+            <button class="tab" onclick="switchTab('live')">📹 PHÂN TÍCH TRỰC TIẾP</button>
+            <button class="tab" onclick="switchTab('jobs')">📊 DANH SÁCH JOBS</button>
+            <button class="tab" onclick="switchTab('results')">✅ KẾT QUẢ</button>
+            <button class="tab" onclick="switchTab('history')">📚 LỊCH SỬ</button>
+            <button class="tab" onclick="switchTab('blockchain')">🔗 BLOCKCHAIN</button>
+            <button class="tab" onclick="switchTab('parking')">🅿️ BÃI ĐỖ XE</button>
+            <button class="tab" onclick="switchTab('chatbot')">🤖 CHATBOT</button>
+            <button class="tab" onclick="switchTab('settings')">⚙️ CẤU HÌNH</button>
+        </div>
+
+        <!-- Upload Tab -->
+        <div id="upload" class="tab-content active">
+            <div class="section">
+                <div class="section-title">📤 Tải lên video giám sát giao thông</div>
+
+                <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+                    <div class="upload-icon">📹</div>
+                    <div class="upload-text">Kéo thả video tại đây hoặc nhấp để chọn</div>
+                    <div class="upload-hint">Hỗ trợ: MP4, AVI, MOV, MKV (Tối đa 500MB)</div>
+                </div>
+                <input type="file" id="fileInput" class="hidden-input" accept="video/*" onchange="handleFileSelect(event)">
+
+                <div class="section" style="margin-top: 20px;">
+                    <div class="section-title" style="margin-bottom: 20px;">⚙️ Tham số xử lý</div>
+                    <div class="params-grid">
+                        <div class="param-group">
+                            <label class="param-label">Ngưỡng tin cậy</label>
+                            <div class="range-container">
+                                <input type="range" class="range-input param-input" id="confidence" min="0" max="1" step="0.05" value="0.3" oninput="updateValue('confidence')">
+                                <span class="range-value" id="confidence-val">0.30</span>
+                            </div>
+                        </div>
+                        <div class="param-group">
+                            <label class="param-label">Ngưỡng IoU</label>
+                            <div class="range-container">
+                                <input type="range" class="range-input param-input" id="iou" min="0" max="1" step="0.05" value="0.35" oninput="updateValue('iou')">
+                                <span class="range-value" id="iou-val">0.35</span>
+                            </div>
+                        </div>
+                        <div class="param-group">
+                            <label class="param-label">Vị trí đường đếm (Tỉ lệ Y)</label>
+                            <div class="range-container">
+                                <input type="range" class="range-input param-input" id="line_ratio" min="0.1" max="0.9" step="0.05" value="0.5" oninput="updateValue('line_ratio')">
+                                <span class="range-value" id="line_ratio-val">0.50</span>
+                            </div>
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                <button class="btn-secondary" onclick="syncLineRatioFromSettings()" style="flex: 1; padding: 8px; font-size: 12px;">📥 Đồng bộ từ CẤU HÌNH</button>
+                                <label style="flex: 1; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px;">
+                                    <input type="checkbox" id="useGlobalSettings" checked>
+                                    <span>Sử dụng CẤU HÌNH</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group" style="margin-top: 20px;">
+                    <button class="btn-primary" id="uploadBtn" onclick="uploadVideo()" disabled>🚀 UPLOAD & XỬ LÝ</button>
+                </div>
+
+                <div id="uploadStatus" style="margin-top: 20px; text-align: center;"></div>
+            </div>
+        </div>
+
+        <!-- Live Stream Tab -->
+        <div id="live" class="tab-content">
+            <div class="section">
+                <div class="section-title">📹 Phân tích video trực tiếp từ webcam</div>
+
+                <div class="section" style="margin-bottom: 20px;">
+                    <div class="section-title" style="margin-bottom: 14px;">⚙️ Tham số trực tiếp</div>
+                    <div class="params-grid">
+                        <div class="param-group">
+                            <label class="param-label">Ngưỡng tin cậy</label>
+                            <div class="range-container">
+                                <input type="range" class="range-input param-input" id="live-confidence" min="0" max="1" step="0.05" value="0.3" oninput="updateValue('live-confidence')">
+                                <span class="range-value" id="live-confidence-val">0.30</span>
+                            </div>
+                        </div>
+                        <div class="param-group">
+                            <label class="param-label">Ngưỡng IoU</label>
+                            <div class="range-container">
+                                <input type="range" class="range-input param-input" id="live-iou" min="0" max="1" step="0.05" value="0.35" oninput="updateValue('live-iou')">
+                                <span class="range-value" id="live-iou-val">0.35</span>
+                            </div>
+                        </div>
+                        <div class="param-group">
+                            <label class="param-label">Vị trí đường đếm (Tỉ lệ Y)</label>
+                            <div class="range-container">
+                                <input type="range" class="range-input param-input" id="live-line" min="0.1" max="0.9" step="0.05" value="0.5" oninput="updateValue('live-line')">
+                                <span class="range-value" id="live-line-val">0.50</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group" style="margin-bottom: 20px;">
+                    <button class="btn-primary" id="streamBtn" onclick="startStream()">▶️ BẮT ĐẦU TRỰC TIẾP</button>
+                    <button class="btn-secondary" id="stopBtn" onclick="stopStream()" disabled>⏹️ DỪNG</button>
+                </div>
+
+                <div style="width: 100%; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; position: relative;">
+                    <img id="streamImage" src="" alt="Stream" style="width: 100%; height: auto; display: none;">
+                    <div id="streamPlaceholder" style="width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; background: linear-gradient(45deg, var(--panel), var(--border)); color: var(--dim);">
+                        <div style="text-align: center;">
+                            <div style="font-size: 48px; margin-bottom: 10px;">📹</div>
+                            <div>Nhấp "BẮT ĐẦU TRỰC TIẾP" để xem video từ webcam</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="streamStats" style="margin-top: 20px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;">
+                    <div class="result-card">
+                        <div class="result-value" id="stat-flow">-</div>
+                        <div class="result-label">Lưu lượng (xe/phút)</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="result-value" id="stat-vehicles">-</div>
+                        <div class="result-label">Xe trên đường</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="result-value" id="stat-violations">-</div>
+                        <div class="result-label">Vi phạm</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="result-value" id="stat-total">-</div>
+                        <div class="result-label">Tổng xe vào</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Jobs Tab -->
+        <div id="jobs" class="tab-content">
+            <div class="section">
+                <div class="section-title">📊 Danh sách công việc xử lý</div>
+                <div class="job-list scrollbar" id="jobList" style="max-height: 600px; overflow-y: auto;">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div>Chưa có công việc nào</div>
+                    </div>
+                </div>
+                <div style="margin-top: 14px; text-align: center;">
+                    <button class="btn-secondary" onclick="refreshJobs()">🔄 Làm mới</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Tab -->
+        <div id="results" class="tab-content">
+            <div class="section">
+                <div class="section-title">✅ Kết quả giám sát lưu lượng</div>
+                <div id="resultsContent">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <div>Chưa có kết quả nào - Hãy upload và xử lý video</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chatbot Tab -->
+        <div id="chatbot" class="tab-content">
+            <div class="section">
+                <div class="section-title" style="margin-bottom: 20px;">🤖 Trợ lý AI Giao Thông Thông Minh</div>
+                
+                <!-- Chatbot Status -->
+                <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold; color: var(--accent);">Chatbot Status</div>
+                            <div style="font-size: 12px; color: var(--dim); margin-top: 5px;" id="chatbot-status">Đang tải...</div>
+                        </div>
+                        <button onclick="clearChatHistory()" style="padding: 8px 16px; background: var(--red); border: none; border-radius: 4px; color: white; cursor: pointer; font-size: 12px;">🗑️ Xóa lịch sử</button>
+                    </div>
+                </div>
+
+                <!-- Chat Messages Container -->
+                <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; height: 400px; overflow-y: auto; padding: 15px; margin-bottom: 15px;" id="chatMessages">
+                    <div style="text-align: center; color: var(--dim); padding: 20px;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">👋</div>
+                        <div>Chào mừng! Tôi là trợ lý AI cho thành phố giao thông thông minh.</div>
+                        <div style="font-size: 12px; margin-top: 10px;">Hỏi tôi về thống kê giao thông, vi phạm, hoặc gợi ý tối ưu hóa.</div>
+                    </div>
+                </div>
+
+                <!-- Input Area -->
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="chatInput" placeholder="Nhập câu hỏi của bạn..." style="flex: 1; padding: 12px; background: var(--panel); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-size: 14px;" onkeypress="if(event.key==='Enter') sendChatMessage()">
+                    <button onclick="sendChatMessage()" style="padding: 12px 24px; background: var(--accent); border: none; border-radius: 4px; color: black; cursor: pointer; font-weight: bold;">📤 Gửi</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parking Detection Tab -->
+        <div id="parking" class="tab-content">
+            <div class="section">
+                <div class="section-title">🅿️ Phát hiện chỗ trống bãi đỗ xe</div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                    <!-- Upload Section -->
+                    <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+                        <div class="section-title" style="margin-bottom: 15px; font-size: 16px;">📤 Tải video bãi đỗ xe</div>
+                        
+                        <div class="upload-zone" id="parkingUploadZone" onclick="document.getElementById('parkingFileInput').click()" style="border: 2px dashed var(--accent); border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; background: rgba(100, 150, 255, 0.05);">
+                            <input type="file" id="parkingFileInput" style="display: none;" accept="video/*">
+                            <div style="font-size: 32px; margin-bottom: 10px;">📹</div>
+                            <div style="font-size: 14px; color: var(--accent);">Kéo thả hoặc nhấp để chọn video</div>
+                            <div style="font-size: 12px; color: var(--dim); margin-top: 5px;">Hỗ trợ: MP4, AVI, MOV, MKV</div>
+                        </div>
+
+                        <div style="margin-top: 20px;">
+                            <div class="param-group">
+                                <label>Độ tin cậy phát hiện (0.1 - 1.0)</label>
+                                <input type="range" id="parkingConfidence" min="0.1" max="1.0" step="0.05" value="0.25" style="width: 100%;">
+                                <div style="font-size: 12px; color: var(--dim);">Giá trị: <span id="parkingConfidenceValue">0.25</span></div>
+                            </div>
+                            
+                            <div class="param-group">
+                                <label>Phương thức phát hiện</label>
+                                <select id="parkingMethod" style="width: 100%; padding: 8px; background: var(--input); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                                    <option value="grid">📊 Lưới đều (Grid-based)</option>
+                                    <option value="auto">🔍 Tự động (Auto-detect lines)</option>
+                                    <option value="both">⚙️ Cả hai</option>
+                                </select>
+                            </div>
+                            
+                            <div class="param-group" id="gridConfigGroup">
+                                <label>Cấu hình lưới (Cột x Hàng)</label>
+                                <div style="display: flex; gap: 10px;">
+                                    <div>
+                                        <input type="number" id="parkingCols" min="2" max="20" value="5" style="width: 100%; padding: 8px; background: var(--input); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                                        <div style="font-size: 11px; color: var(--dim); margin-top: 3px;">Cột</div>
+                                    </div>
+                                    <div>
+                                        <input type="number" id="parkingRows" min="2" max="20" value="3" style="width: 100%; padding: 8px; background: var(--input); border: 1px solid var(--border); border-radius: 4px; color: var(--text);">
+                                        <div style="font-size: 11px; color: var(--dim); margin-top: 3px;">Hàng</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button onclick="uploadParkingVideo()" style="width: 100%; padding: 12px; background: var(--accent); border: none; border-radius: 4px; color: black; cursor: pointer; font-weight: bold; font-size: 14px; margin-top: 15px;">🚀 Phân tích video</button>
+                        </div>
+                    </div>
+
+                    <!-- Status Section -->
+                    <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+                        <div class="section-title" style="margin-bottom: 15px; font-size: 16px;">📊 Thống kê bãi đỗ</div>
+                        
+                        <div id="parkingStatusContainer" style="display: none;">
+                            <div class="result-card">
+                                <div class="result-label">Tổng số chỗ đỗ</div>
+                                <div style="font-size: 28px; color: var(--accent); font-weight: bold;" id="parkingTotalSlots">0</div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                                <div class="result-card">
+                                    <div class="result-label">🟢 Chỗ trống</div>
+                                    <div style="font-size: 24px; color: var(--green); font-weight: bold;" id="parkingEmptySlots">0</div>
+                                </div>
+
+                                <div class="result-card">
+                                    <div class="result-label">🔴 Đã đỗ</div>
+                                    <div style="font-size: 24px; color: var(--red); font-weight: bold;" id="parkingOccupiedSlots">0</div>
+                                </div>
+                            </div>
+
+                            <div class="result-card" style="margin-top: 15px;">
+                                <div class="result-label">💯 Tỷ lệ chiếm dụng</div>
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="flex: 1; height: 20px; background: var(--input); border-radius: 10px; overflow: hidden;">
+                                        <div id="parkingOccupancyBar" style="height: 100%; background: var(--red); width: 0%; transition: width 0.3s;"></div>
+                                    </div>
+                                    <div style="font-size: 16px; font-weight: bold; color: var(--accent); min-width: 50px;" id="parkingOccupancyPercent">0%</div>
+                                </div>
+                            </div>
+
+                            <div class="result-card" style="margin-top: 15px;">
+                                <div class="result-label">⏱️ Cập nhật lần cuối</div>
+                                <div style="font-size: 12px; color: var(--dim);" id="parkingLastUpdate">-</div>
+                            </div>
+                        </div>
+
+                        <div id="parkingEmptyState" style="text-align: center; padding: 40px 20px; color: var(--dim);">
+                            <div style="font-size: 32px; margin-bottom: 10px;">🅿️</div>
+                            <div>Chưa có kết quả phân tích</div>
+                            <div style="font-size: 12px; margin-top: 5px;">Tải một video để bắt đầu phân tích</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Section -->
+                <div id="parkingProgressSection" style="display: none; margin-top: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div style="font-weight: bold;">📤 Đang xử lý...</div>
+                        <div style="font-size: 14px; color: var(--accent);" id="parkingProgressPercent">0%</div>
+                    </div>
+                    <div style="height: 20px; background: var(--input); border-radius: 10px; overflow: hidden;">
+                        <div id="parkingProgressBar" style="height: 100%; background: var(--green); width: 0%; transition: width 0.2s;"></div>
+                    </div>
+                </div>
+
+                <!-- Visualization Section -->
+                <div id="parkingVisualizationSection" style="display: none; margin-top: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+                    <div class="section-title" style="margin-bottom: 15px; font-size: 16px;">🎯 Hình ảnh hóa bãi đỗ</div>
+                    <div style="background: var(--input); border-radius: 8px; overflow: hidden;">
+                        <img id="parkingVisualization" src="" alt="Parking visualization" style="width: 100%; height: auto;">
+                    </div>
+                    <div style="margin-top: 15px; text-align: center; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="downloadParkingReport()" style="padding: 10px 20px; background: var(--green); border: none; border-radius: 4px; color: black; cursor: pointer; font-weight: bold; font-size: 12px;">📥 Tải báo cáo</button>
+                        <button onclick="downloadParkingVideo()" style="padding: 10px 20px; background: var(--accent); border: none; border-radius: 4px; color: black; cursor: pointer; font-weight: bold; font-size: 12px;">📹 Tải video</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div class="section">
+                <div class="section-title">⚙️ Cấu hình hệ thống</div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+                    <!-- Violation Detection Line Control -->
+                    <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+                        <div class="section-title" style="margin-bottom: 20px; font-size: 16px;">📍 Đường phát hiện vi phạm</div>
+                        
+                        <div class="param-group">
+                            <label class="param-label">Vị trí đường (Tỉ lệ Y)</label>
+                            <div class="range-container">
+                                <input type="range" class="range-input" id="violationLineRatio" min="0.1" max="0.9" step="0.05" value="0.5" oninput="updateViolationLine()">
+                                <span class="range-value" id="violationLineRatio-val">0.50</span>
+                            </div>
+                            <div style="font-size: 12px; color: var(--dim); margin-top: 10px;">
+                                <div>Pixel Y: <span id="violationLinePixel" style="color: var(--accent); font-weight: bold;">0</span></div>
+                                <div style="margin-top: 5px; color: var(--dim);">Giữ trục Y sao cho đường đi qua dòng xe vi phạm</div>
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);">
+                            <div class="param-label">Tính năng</div>
+                            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" id="violationLineVisualize" checked>
+                                    <span>Hiển thị đường trên video</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                    <input type="checkbox" id="violationAlertEnabled" checked>
+                                    <span>Kích hoạt cảnh báo vi phạm</span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <button class="btn-primary" onclick="applyViolationLineSettings()" style="margin-top: 20px; width: 100%;">✅ Lưu cấu hình</button>
+                    </div>
+                    
+                    <!-- Detection Parameters -->
+                    <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+                        <div class="section-title" style="margin-bottom: 20px; font-size: 16px;">🔍 Tham số phát hiện</div>
+                        
+                        <div class="param-group">
+                            <label class="param-label">Mức độ vi phạm nghiêm trọng (%)</label>
+                            <div class="range-container">
+                                <input type="range" class="range-input" id="severityThreshold" min="20" max="100" step="5" value="70" oninput="updateValue('severityThreshold')">
+                                <span class="range-value" id="severityThreshold-val">70%</span>
+                            </div>
+                        </div>
+                        
+                        <div class="param-group" style="margin-top: 15px;">
+                            <label class="param-label">Khoảng cách tối thiểu để ghi nhận (pixels)</label>
+                            <input type="number" class="param-input" id="minViolationDistance" value="10" min="1" max="100">
+                        </div>
+                        
+                        <div class="param-group" style="margin-top: 15px;">
+                            <label class="param-label">Thời gian phát hiện tối thiểu (khung hình)</label>
+                            <input type="number" class="param-input" id="minDetectionFrames" value="5" min="1" max="30">
+                        </div>
+                        
+                        <button class="btn-primary" onclick="applyDetectionSettings()" style="margin-top: 20px; width: 100%;">✅ Lưu cấu hình</button>
+                    </div>
+                </div>
+                
+                <!-- Status Info -->
+                <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 20px;">
+                    <div class="section-title" style="margin-bottom: 15px; font-size: 16px;">ℹ️ Thông tin hệ thống</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                        <div>
+                            <div style="font-size: 12px; color: var(--dim);">Trạng thái</div>
+                            <div style="font-size: 16px; color: var(--green); font-weight: bold; margin-top: 5px;">● ONLINE</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: var(--dim);">Phiên bản</div>
+                            <div style="font-size: 14px; color: var(--accent); margin-top: 5px;">v2.3</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 12px; color: var(--dim);">Model</div>
+                            <div style="font-size: 14px; color: var(--accent); margin-top: 5px;">YOLOv8n</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blockchain Tab -->
+        <div id="blockchain" class="tab-content">
+            <div class="section">
+                <div class="section-title">🔗 Blockchain & MetaMask - Lưu Trữ Vi Phạm</div>
+                
+                <!-- MetaMask Connection -->
+                <div style="background: var(--panel); border: 2px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div class="section-title" style="margin: 0; font-size: 14px;">🦊 Kết Nối MetaMask</div>
+                        <button id="metamask-connect-btn" class="btn-primary" onclick="connectMetaMask()" style="padding: 8px 16px; font-size: 12px;">Kết nối MetaMask</button>
+                    </div>
+                    <div id="metamask-status" style="background: #0d1220; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 12px;">
+                        ⚠️ Chưa kết nối MetaMask
+                    </div>
+                </div>
+
+                <!-- Blockchain Status -->
+                <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                    <div class="section-title" style="margin-bottom: 15px; font-size: 14px;">📊 Trạng Thái Blockchain</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                        <div class="result-card">
+                            <div class="result-label">Mạng</div>
+                            <div style="font-size: 14px; color: var(--accent);" id="network-display">-</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Số Dư (ETH)</div>
+                            <div style="font-size: 14px; color: var(--green);" id="balance-display">-</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Block Mới Nhất</div>
+                            <div style="font-size: 14px; color: var(--accent);" id="block-display">-</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Gas Price</div>
+                            <div style="font-size: 14px; color: var(--accent);" id="gas-display">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Record Violation to Blockchain -->
+                <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                    <div class="section-title" style="margin-bottom: 20px; font-size: 14px;">✍️ Ghi Vi Phạm Lên Blockchain</div>
+                    
+                    <form id="violation-form" onsubmit="recordViolationToBlockchainViaMetaMask(event)">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div class="param-group">
+                                <label class="param-label">ID Xe (Track ID)</label>
+                                <input type="text" class="param-input" id="vehicle-id" placeholder="track_123456" required>
+                            </div>
+                            <div class="param-group">
+                                <label class="param-label">Loại vi phạm</label>
+                                <select class="param-input" id="violation-type" required>
+                                    <option value="">-- Chọn loại --</option>
+                                    <option value="red_light">Vượt đèn đỏ</option>
+                                    <option value="speeding">Vượt tốc độ</option>
+                                    <option value="parking_violation">Vi phạm đỗ xe</option>
+                                    <option value="no_helmet">Không đội mũ bảo hiểm</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                            <div class="param-group">
+                                <label class="param-label">Mức độ</label>
+                                <select class="param-input" id="severity" required>
+                                    <option value="">-- Chọn mức độ --</option>
+                                    <option value="minor">Nhẹ</option>
+                                    <option value="moderate">Trung bình</option>
+                                    <option value="severe">Nghiêm trọng</option>
+                                </select>
+                            </div>
+                            <div class="param-group">
+                                <label class="param-label">Vị trí (GPS)</label>
+                                <input type="text" class="param-input" id="location" placeholder="10.7769,106.6966" value="0,0">
+                            </div>
+                            <div class="param-group">
+                                <label class="param-label">Hash ảnh</label>
+                                <input type="text" class="param-input" id="image-hash" placeholder="QmXyZ..." value="test_hash">
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 10px;">
+                            <button type="submit" class="btn-primary" style="flex: 1;">🚀 Ghi Lên Blockchain</button>
+                            <button type="reset" class="btn-secondary" style="flex: 1;">🔄 Xóa</button>
+                        </div>
+                    </form>
+                    
+                    <div id="violation-result" style="margin-top: 15px;"></div>
+                </div>
+
+                <!-- Query Vehicle Violations -->
+                <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                    <div class="section-title" style="margin-bottom: 20px; font-size: 14px;">🔍 Tra Cứu Vi Phạm Của Xe</div>
+                    
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <input type="text" class="param-input" id="search-vehicle-id" placeholder="Nhập biển số xe..." style="flex: 1;">
+                        <button class="btn-secondary" onclick="queryVehicleViolations()" style="padding: 8px 20px;">🔍 Tìm Kiếm</button>
+                    </div>
+                    
+                    <div id="violations-result" style="background: #0d1220; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 12px; min-height: 150px;">
+                        <p style="color: var(--dim);">Nhập biển số xe và nhấp tìm kiếm để xem danh sách vi phạm</p>
+                    </div>
+                </div>
+
+                <!-- Transaction History -->
+                <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px;">
+                    <div class="section-title" style="margin-bottom: 15px; font-size: 14px;">📋 Lịch Sử Giao Dịch</div>
+                    
+                    <div id="transaction-history" style="background: #0d1220; border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 12px; max-height: 300px; overflow-y: auto;">
+                        <p style="color: var(--dim); text-align: center; padding: 20px;">Chưa có giao dịch nào</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history" class="tab-content">
+            <div class="section">
+                <div class="section-title">📚 Lịch sử xử lý video</div>
+                
+                <div style="margin-bottom: 20px;">
+                    <button class="btn-primary" onclick="loadHistory()" style="margin-right: 10px;">🔄 Tải lịch sử</button>
+                    <button class="btn-secondary" onclick="loadDatabaseStats()">📊 Thống kê</button>
+                </div>
+                
+                <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+                    <div style="overflow-x: auto;">
+                        <table id="historyTable" style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                            <thead>
+                                <tr style="background: #0d1220; border-bottom: 1px solid var(--border);">
+                                    <th style="padding: 12px; text-align: left; color: var(--dim);">Job ID</th>
+                                    <th style="padding: 12px; text-align: left; color: var(--dim);">Tên file</th>
+                                    <th style="padding: 12px; text-align: center; color: var(--dim);">Trạng thái</th>
+                                    <th style="padding: 12px; text-align: center; color: var(--dim);">Xe</th>
+                                    <th style="padding: 12px; text-align: center; color: var(--dim);">Vi phạm</th>
+                                    <th style="padding: 12px; text-align: center; color: var(--dim);">Ngày tạo</th>
+                                    <th style="padding: 12px; text-align: center; color: var(--dim);">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <tr>
+                                    <td colspan="7" style="padding: 20px; text-align: center; color: var(--dim);">
+                                        Nhấp "🔄 Tải lịch sử" để xem dữ liệu
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="databaseStats" style="margin-top: 20px; display: none;">
+                    <div class="section-title" style="margin-bottom: 15px;">📊 Thống kê database</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px;">
+                        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center;">
+                            <div style="font-size: 28px; font-weight: bold; color: var(--accent);" id="stat-total-jobs">0</div>
+                            <div style="font-size: 12px; color: var(--dim); margin-top: 8px;">TỔNG JOBS</div>
+                        </div>
+                        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center;">
+                            <div style="font-size: 28px; font-weight: bold; color: var(--green);" id="stat-completed-jobs">0</div>
+                            <div style="font-size: 12px; color: var(--dim); margin-top: 8px;">HOÀN THÀNH</div>
+                        </div>
+                        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center;">
+                            <div style="font-size: 28px; font-weight: bold; color: var(--red);" id="stat-total-violations">0</div>
+                            <div style="font-size: 12px; color: var(--dim); margin-top: 8px;">TỔNG VI PHẠM</div>
+                        </div>
+                        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 20px; text-align: center;">
+                            <div style="font-size: 28px; font-weight: bold; color: var(--accent);" id="stat-total-vehicles">0</div>
+                            <div style="font-size: 12px; color: var(--dim); margin-top: 8px;">TỔNG XE</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for messages -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-icon" id="modalIcon">ℹ️</div>
+            <div class="modal-title" id="modalTitle">Thông báo</div>
+            <div class="modal-message" id="modalMessage"></div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="closeModal()">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Live Processing Video -->
+    <div class="modal" id="liveProcessingModal">
+        <div class="modal-content" style="max-width: 90%; width: 1200px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="modal-title">📹 Phân tích Video Trực tiếp</div>
+                <button class="btn-secondary" onclick="closeLiveProcessingModal()" style="padding: 8px 12px; font-size: 14px;">✕ Đóng</button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                <!-- Video Section -->
+                <div>
+                    <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 10px;">
+                        <img id="liveProcessingImage" src="" alt="Processing" style="width: 100%; height: auto; display: none;">
+                        <div id="liveProcessingPlaceholder" style="width: 100%; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; background: linear-gradient(45deg, var(--panel), var(--border)); color: var(--dim);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 48px; margin-bottom: 10px;">📹</div>
+                                <div>Đang kết nối đến video...</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--dim); text-align: center;" id="liveProcessingInfo">Chờ khởi động xử lý...</div>
+                </div>
+                
+                <!-- Stats Section -->
+                <div>
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+                        <div class="result-card" style="margin: 0;">
+                            <div class="result-value" id="processingProgress">0%</div>
+                            <div class="result-label">Tiến độ</div>
+                        </div>
+                        
+                        <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px;">
+                            <div class="progress-bar" style="margin-bottom: 10px;">
+                                <div class="progress-fill" id="processingProgressBar" style="width: 0%; height: 20px;"></div>
+                            </div>
+                            <div style="font-size: 12px; color: var(--dim); text-align: center;" id="processingStatus">Chờ khởi động...</div>
+                        </div>
+                        
+                        <div class="result-card" style="margin: 0;">
+                            <div class="result-label">Tên file</div>
+                            <div style="font-size: 12px; color: var(--text); word-break: break-all;" id="processingFilename">-</div>
+                        </div>
+                        
+                        <div class="result-card" style="margin: 0;">
+                            <div class="result-label">Trạng thái</div>
+                            <div style="font-size: 14px;" id="processingJobStatus">
+                                <span class="status-badge status-queued">QUEUED</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Violation Detail -->
+    <div class="modal" id="violationDetailModal">
+        <div class="modal-content" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div class="modal-title">🚨 Chi tiết vi phạm vượt đèn đỏ</div>
+                <button class="btn-secondary" onclick="closeViolationModal()" style="padding: 8px 12px; font-size: 14px;">✕ Đóng</button>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <!-- Image Section -->
+                <div>
+                    <div style="background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 10px;">
+                        <img id="violationImage" src="" alt="Violation" style="width: 100%; height: auto;">
+                    </div>
+                    <div style="font-size: 12px; color: var(--dim); text-align: center;">Ảnh xe vi phạm</div>
+                </div>
+                
+                <!-- Info Section -->
+                <div>
+                    <div class="result-card">
+                        <div class="result-label">Loại xe</div>
+                        <div style="font-size: 14px; color: var(--green);" id="violationVehicleType">-</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-label">Mức độ vi phạm</div>
+                        <div style="font-size: 14px; font-weight: bold;" id="violationSeverity">-</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-label">Thời gian</div>
+                        <div style="font-size: 14px;" id="violationTime">-</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-label">Track ID</div>
+                        <div style="font-size: 14px;" id="violationTrackId">-</div>
+                    </div>
+                    
+                    <div class="result-card">
+                        <div class="result-label">Frame</div>
+                        <div style="font-size: 14px;" id="violationFrameNumber">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentJobId = null;
+        const POLL_INTERVAL = 1000; // Poll every 1 second
+        let pollInterval = null;
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+
+            if (tabName === 'jobs') {
+                refreshJobs();
+            } else if (tabName === 'results') {
+                refreshResults();
+            }
+        }
+
+        function updateValue(id) {
+            const elem = document.getElementById(id);
+            const val = parseFloat(elem.value).toFixed(2);
+            document.getElementById(id + '-val').textContent = val;
+        }
+
+        function syncLineRatioFromSettings() {
+            // Lấy cấu hình từ server
+            fetch('/api/settings')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.settings && data.settings.violation_line_ratio) {
+                        const ratio = data.settings.violation_line_ratio;
+                        document.getElementById('line_ratio').value = ratio;
+                        document.getElementById('line_ratio-val').textContent = ratio.toFixed(2);
+                        showMessage('✅ Thành công', `Đã đồng bộ line_ratio từ CẤU HÌNH: ${(ratio * 100).toFixed(0)}%`, 'success');
+                    }
+                })
+                .catch(err => showMessage('❌ Lỗi', 'Không thể đồng bộ: ' + err.message, 'error'));
+        }
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                document.getElementById('uploadBtn').disabled = false;
+                document.getElementById('uploadStatus').innerHTML = `<span style="color: var(--green);">✓ Đã chọn: ${file.name}</span>`;
+            }
+        }
+
+        const uploadZone = document.getElementById('uploadZone');
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('fileInput').files = files;
+                handleFileSelect({ target: { files } });
+            }
+        });
+
+        function uploadVideo() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showMessage('❌ Lỗi', 'Vui lòng chọn video', 'error');
+                return;
+            }
+
+            // Kiểm tra kích thước file
+            const MAX_SIZE = 500 * 1024 * 1024; // 500MB
+            if (file.size > MAX_SIZE) {
+                showMessage('❌ Lỗi', `File quá lớn. Tối đa ${MAX_SIZE / 1024 / 1024}MB`, 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('confidence', document.getElementById('confidence').value);
+            formData.append('iou', document.getElementById('iou').value);
+            
+            // Kiểm tra checkbox "Sử dụng CẤU HÌNH"
+            const useGlobalSettings = document.getElementById('useGlobalSettings').checked;
+            if (useGlobalSettings) {
+                // Gửi flag để server sử dụng global_settings
+                formData.append('use_global_settings', '1');
+            } else {
+                formData.append('line_ratio', document.getElementById('line_ratio').value);
+            }
+
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.innerHTML = `<div class="spinner"></div> Đang tải lên... (${(file.size / 1024 / 1024).toFixed(1)}MB)`;
+            document.getElementById('uploadBtn').disabled = true;
+
+            console.log('[Upload] Starting upload for file:', file.name, file.size);
+
+            fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            })
+                .then(async r => {
+                    console.log('[Upload] Response status:', r.status);
+                    const data = await r.json();
+                    if (!r.ok) {
+                        throw new Error(data.error || `HTTP ${r.status}`);
+                    }
+                    return data;
+                })
+                .then(data => {
+                    console.log('[Upload] Success:', data);
+                    if (data.success) {
+                        currentJobId = data.job_id;
+                        statusDiv.innerHTML = `<span style="color: var(--green);">✓ Job ID: ${data.job_id}</span><br><span style="color: var(--accent);">📋 Bắt đầu xử lý video...</span>`;
+                        
+                        // Hiển thị live processing modal
+                        setTimeout(() => {
+                            showLiveProcessingModal(data.job_id);
+                        }, 500);
+                        
+                        startPolling();
+                    } else {
+                        throw new Error(data.error || 'Upload thất bại');
+                    }
+                })
+                .catch(err => {
+                    console.error('[Upload] Error:', err);
+                    const errorMsg = err.message || err.toString();
+                    statusDiv.innerHTML = `<span style="color: var(--red);">✗ Lỗi: ${errorMsg}</span>`;
+                    showMessage('❌ Lỗi Upload', errorMsg, 'error');
+                    document.getElementById('uploadBtn').disabled = false;
+                });
+        }
+
+        function startPolling() {
+            if (pollInterval) clearInterval(pollInterval);
+            pollInterval = setInterval(checkStatus, POLL_INTERVAL);
+        }
+
+        function checkStatus() {
+            if (!currentJobId) return;
+
+            fetch(`/api/status/${currentJobId}`)
+                .then(r => {
+                    if (!r.ok) {
+                        throw new Error(`HTTP ${r.status}`);
+                    }
+                    return r.json();
+                })
+                .then(data => {
+                    const statusDiv = document.getElementById('uploadStatus');
+
+                    if (data.status === 'queued') {
+                        statusDiv.innerHTML = `
+                            <div style="margin-bottom: 10px;">
+                                <span>⏳ Chờ xử lý...</span>
+                            </div>
+                        `;
+                    } else if (data.status === 'processing') {
+                        statusDiv.innerHTML = `
+                            <div style="margin-bottom: 10px;">
+                                <div class="spinner" style="display: inline-block;"></div>
+                                <span> Xử lý: ${data.progress}%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${data.progress}%"></div>
+                            </div>
+                        `;
+                    } else if (data.status === 'completed') {
+                        clearInterval(pollInterval);
+                        statusDiv.innerHTML = `<span style="color: var(--green);">✓ Xử lý hoàn thành!</span>`;
+                        showMessage('✅ Thành công', 'Video đã xử lý xong! Kiểm tra tab "Kết quả" để xem chi tiết.', 'success');
+                        refreshJobs();
+                    } else if (data.status === 'error') {
+                        clearInterval(pollInterval);
+                        statusDiv.innerHTML = `<span style="color: var(--red);">✗ Lỗi: ${data.error}</span>`;
+                        showMessage('❌ Lỗi Xử Lý', data.error || 'Lỗi xử lý video', 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error('Status check error:', err);
+                    // Tiếp tục thử lại thay vì dừng lại
+                });
+        }
+        }
+
+        function refreshJobs() {
+            fetch('/api/jobs')
+                .then(r => r.json())
+                .then(data => {
+                    const jobList = document.getElementById('jobList');
+                    if (!data.jobs || data.jobs.length === 0) {
+                        jobList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div>Chưa có công việc nào</div></div>';
+                        return;
+                    }
+
+                    jobList.innerHTML = data.jobs.map(job => `
+                        <div class="job-item">
+                            <div class="job-icon">${getJobIcon(job.status)}</div>
+                            <div class="job-info">
+                                <div class="job-name">${job.filename}</div>
+                                <div class="job-status">
+                                    <span class="status-badge status-${job.status}">${job.status.toUpperCase()}</span>
+                                    <span>${job.progress}%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${job.progress}%"></div>
+                                </div>
+                            </div>
+                            <div class="job-actions">
+                                ${job.status === 'completed' ? `
+                                    <button class="btn-success" onclick="downloadVideo('${job.job_id}')">📥 Download</button>
+                                    <button class="btn-secondary" onclick="showResults('${job.job_id}')">📊 Chi tiết</button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                })
+                .catch(err => console.error('Refresh error:', err));
+        }
+
+        function refreshResults() {
+            fetch('/api/jobs')
+                .then(r => r.json())
+                .then(data => {
+                    const completed = data.jobs?.filter(j => j.status === 'completed') || [];
+                    const resultsContent = document.getElementById('resultsContent');
+
+                    if (completed.length === 0) {
+                        resultsContent.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><div>Chưa có kết quả nào</div></div>';
+                        return;
+                    }
+
+                    resultsContent.innerHTML = completed.map(job => `
+                        <div class="section" style="margin-bottom: 20px;">
+                            <h4 style="color: var(--accent); margin-bottom: 14px;">${job.filename}</h4>
+                            <button class="btn-secondary" onclick="loadAndDisplayResults('${job.job_id}')">📊 Xem kết quả</button>
+                        </div>
+                    `).join('');
+                })
+                .catch(err => console.error('Results error:', err));
+        }
+
+        function loadAndDisplayResults(jobId) {
+            fetch(`/api/results/${jobId}`)
+                .then(r => r.json())
+                .then(stats => {
+                    const resultsContent = document.getElementById('resultsContent');
+                    resultsContent.innerHTML = `
+                        <div class="section" style="margin-bottom: 20px;">
+                            <div class="section-title">📊 Thống kê lưu lượng giao thông</div>
+                            <div class="results-grid">
+                                <div class="result-card">
+                                    <div class="result-value">${(stats.average_flow_rate || 0).toFixed(1)}</div>
+                                    <div class="result-label">Lưu lượng TB (xe/phút)</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value">${(stats.peak_flow_rate || 0).toFixed(1)}</div>
+                                    <div class="result-label">Lưu lượng cao nhất (xe/phút)</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value">${stats.total_vehicles_in}</div>
+                                    <div class="result-label">Tổng xe qua đường</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value">${(stats.video_duration || 0).toFixed(1)}s</div>
+                                    <div class="result-label">Thời gian video</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value">${stats.total_frames}</div>
+                                    <div class="result-label">Tổng frames</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value">${stats.fps.toFixed(1)}</div>
+                                    <div class="result-label">FPS</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value">${stats.congestion_level || 'N/A'}</div>
+                                    <div class="result-label">Mức kẹt xe</div>
+                                </div>
+                                <div class="result-card">
+                                    <div class="result-value">${(stats.traffic_density || 0).toFixed(1)}%</div>
+                                    <div class="result-label">Mật độ giao thông</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section" style="margin-bottom: 20px;">
+                            <div class="section-title" style="color: #ff2d5e;">🚨 VI PHẠM VƯỢT ĐÈN ĐỎ</div>
+                            <div class="results-grid">
+                                <div class="result-card" style="border: 2px solid #ff2d5e;">
+                                    <div class="result-value" style="color: #ff2d5e;">${stats.total_violations || 0}</div>
+                                    <div class="result-label">Tổng vi phạm</div>
+                                </div>
+                                <div class="result-card" style="border: 2px solid #ff6040;">
+                                    <div class="result-value" style="color: #ff6040;">${stats.severe_violations || 0}</div>
+                                    <div class="result-label">Vi phạm NGUY HIỂM</div>
+                                </div>
+                                <div class="result-card" style="border: 2px solid #ff9800;">
+                                    <div class="result-value" style="color: #ff9800;">${stats.moderate_violations || 0}</div>
+                                    <div class="result-label">Vi phạm TRUNG BÌNH</div>
+                                </div>
+                                <div class="result-card" style="border: 2px solid #ffc107;">
+                                    <div class="result-value" style="color: #ffc107;">${stats.minor_violations || 0}</div>
+                                    <div class="result-label">Vi phạm NHỎ</div>
+                                </div>
+                                <div class="result-card" style="border: 2px solid #ff2d5e;">
+                                    <div class="result-value" style="color: #ff2d5e;">${(stats.violation_rate || 0).toFixed(2)}%</div>
+                                    <div class="result-label">Tỷ lệ vi phạm</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section" style="margin-bottom: 20px;">
+                            <div class="section-title" style="color: #ff2d5e;">📋 Vi phạm gần đây</div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px;">
+                                ${stats.recent_violations && stats.recent_violations.length > 0 ? 
+                                    stats.recent_violations.map((v, idx) => `
+                                        <div style="background: #0d1220; border: 2px solid ${
+                                            v.severity === 'SEVERE' ? '#ff6040' : 
+                                            v.severity === 'MODERATE' ? '#ff9800' : 
+                                            '#ffc107'
+                                        }; border-radius: 8px; padding: 12px; cursor: pointer; transition: all 0.3s;" 
+                                             onclick="showViolationDetail(event, '${currentJobId}', ${idx})"
+                                             onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 0 20px rgba(255,45,94,0.3)'"
+                                             onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none'">
+                                            <div style="font-weight: bold; color: var(--green); margin-bottom: 6px;">🚗 #${v.track_id || 'N/A'}</div>
+                                            <div style="font-size: 12px; color: var(--dim); margin-bottom: 8px;">${v.timestamp || '-'}</div>
+                                            <div style="font-size: 11px; margin-bottom: 4px;">Loại: <strong>${v.vehicle_type || '-'}</strong></div>
+                                            <div style="font-size: 11px; color: ${
+                                                v.severity === 'SEVERE' ? '#ff6040' : 
+                                                v.severity === 'MODERATE' ? '#ff9800' : 
+                                                '#ffc107'
+                                            }; font-weight: bold;">Mức độ: ${v.severity || '-'}</div>
+                                            <div style="font-size: 11px; color: var(--dim); margin-top: 6px;">Frame: ${v.frame || v.frame_number || '-'}</div>
+                                        </div>
+                                    `).join('')
+                                    : '<div style="color: var(--dim); text-align: center; padding: 20px; grid-column: 1/-1;">Không có vi phạm</div>'
+                                }
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <div class="section-title">🚗 Chi tiết loại xe & Lưu lượng giao thông</div>
+                            <div class="results-grid" id="vehicleDetails"></div>
+                        </div>
+
+                        <div class="section">
+                            <div style="text-align: center; padding: 20px;">
+                                <button class="btn-success" onclick="downloadVideo('${jobId}')">📥 Tải video xử lý</button>
+                            </div>
+                        </div>
+                    `;
+
+                    // Display vehicle details
+                    const vehicleDetails = document.getElementById('vehicleDetails');
+                    if (stats.vehicle_details) {
+                        vehicleDetails.innerHTML = Object.entries(stats.vehicle_details).map(([type, counts]) => `
+                            <div class="result-card">
+                                <div style="font-size: 16px; margin-bottom: 6px;">🚗</div>
+                                <div class="result-label">${type.toUpperCase()}</div>
+                                <div style="font-size: 12px; color: var(--dim); margin-top: 8px;">
+                                    <div>Qua: ${(counts.in || 0) + (counts.out || 0)}</div>
+                                    <div>Vào: ${counts.in || 0} | Ra: ${counts.out || 0}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                })
+                .catch(err => {
+                    showMessage('❌ Lỗi', 'Không thể tải kết quả: ' + err.message, 'error');
+                });
+        }
+
+        function downloadVideo(jobId) {
+            window.location.href = `/api/download/${jobId}`;
+        }
+
+        function showResults(jobId) {
+            loadAndDisplayResults(jobId);
+            switchTab('results');
+        }
+
+        function getJobIcon(status) {
+            switch (status) {
+                case 'queued': return '⏳';
+                case 'processing': return '⚙️';
+                case 'completed': return '✅';
+                case 'error': return '❌';
+                default: return '❓';
+            }
+        }
+
+        function showMessage(title, message, type) {
+            const modal = document.getElementById('modal');
+            const icons = {
+                'success': '✅',
+                'error': '❌',
+                'info': 'ℹ️'
+            };
+            document.getElementById('modalIcon').textContent = icons[type] || 'ℹ️';
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalMessage').textContent = message;
+            modal.classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Live Stream Functions
+        let streamActive = false;
+        let statsInterval = null;
+
+        function startStream() {
+            const confidence = document.getElementById('live-confidence').value;
+            const iou = document.getElementById('live-iou').value;
+            const line = document.getElementById('live-line').value;
+
+            fetch('/api/stream/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confidence, iou, line_ratio: line, camera: 0 })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        streamActive = true;
+                        document.getElementById('streamBtn').disabled = true;
+                        document.getElementById('stopBtn').disabled = false;
+                        document.getElementById('streamPlaceholder').style.display = 'none';
+                        
+                        const img = document.getElementById('streamImage');
+                        img.src = `/api/stream/video_feed?confidence=${confidence}&iou=${iou}&line_ratio=${line}`;
+                        img.style.display = 'block';
+                        
+                        // Start updating stats
+                        statsInterval = setInterval(updateStreamStats, 1000);
+                        updateStreamStats();
+                        
+                        showMessage('✅ Thành công', 'Đã bắt đầu phân tích video trực tiếp từ webcam', 'success');
+                    }
+                })
+                .catch(err => showMessage('❌ Lỗi', 'Không thể bắt đầu stream: ' + err.message, 'error'));
+        }
+
+        function stopStream() {
+            fetch('/api/stream/stop', { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        streamActive = false;
+                        document.getElementById('streamBtn').disabled = false;
+                        document.getElementById('stopBtn').disabled = true;
+                        document.getElementById('streamImage').style.display = 'none';
+                        document.getElementById('streamPlaceholder').style.display = 'flex';
+                        
+                        if (statsInterval) clearInterval(statsInterval);
+                        
+                        // Reset stats display
+                        document.getElementById('stat-flow').textContent = '-';
+                        document.getElementById('stat-vehicles').textContent = '-';
+                        document.getElementById('stat-violations').textContent = '-';
+                        document.getElementById('stat-total').textContent = '-';
+                        
+                        showMessage('✅ Thành công', 'Đã dừng phân tích video trực tiếp', 'success');
+                    }
+                })
+                .catch(err => showMessage('❌ Lỗi', 'Lỗi: ' + err.message, 'error'));
+        }
+
+        function updateStreamStats() {
+            if (!streamActive) return;
+            
+            fetch('/api/stream/stats')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('stat-flow').textContent = (data.flow_rate || 0).toFixed(1);
+                    document.getElementById('stat-vehicles').textContent = data.total_vehicles_in || 0;
+                    document.getElementById('stat-violations').textContent = (data.violations?.total_violations || 0);
+                    document.getElementById('stat-total').textContent = data.total_vehicles_in || 0;
+                })
+                .catch(err => console.log('Stats error:', err));
+        }
+
+        // Live Processing Video Functions
+        let liveProcessingInterval = null;
+        let liveProcessingJobId = null;
+
+        function showLiveProcessingModal(jobId) {
+            liveProcessingJobId = jobId;
+            const modal = document.getElementById('liveProcessingModal');
+            modal.classList.add('active');
+            
+            // Bắt đầu cập nhật stats
+            clearInterval(liveProcessingInterval);
+            liveProcessingInterval = setInterval(() => {
+                updateProcessingStats(jobId);
+            }, 1000);
+            
+            // Load lần đầu
+            updateProcessingStats(jobId);
+            
+            // Bắt đầu stream video
+            setTimeout(() => {
+                const img = document.getElementById('liveProcessingImage');
+                img.src = `/api/stream/processing/${jobId}?t=${Date.now()}`;
+                img.style.display = 'block';
+                document.getElementById('liveProcessingPlaceholder').style.display = 'none';
+            }, 500);
+        }
+
+        function closeLiveProcessingModal() {
+            const modal = document.getElementById('liveProcessingModal');
+            modal.classList.remove('active');
+            
+            if (liveProcessingInterval) clearInterval(liveProcessingInterval);
+            
+            document.getElementById('liveProcessingImage').style.display = 'none';
+            document.getElementById('liveProcessingPlaceholder').style.display = 'flex';
+        }
+
+        function updateProcessingStats(jobId) {
+            if (!liveProcessingJobId) return;
+            
+            fetch(`/api/processing/stats/${jobId}`)
+                .then(r => {
+                    if (!r.ok) {
+                        throw new Error(`HTTP ${r.status}`);
+                    }
+                    return r.json();
+                })
+                .then(data => {
+                    // Cập nhật progress
+                    document.getElementById('processingProgress').textContent = data.progress + '%';
+                    document.getElementById('processingProgressBar').style.width = data.progress + '%';
+                    
+                    // Cập nhật filename
+                    document.getElementById('processingFilename').textContent = data.filename || '-';
+                    
+                    // Cập nhật status badge
+                    const statusBadge = document.querySelector('#processingJobStatus .status-badge');
+                    statusBadge.textContent = data.status.toUpperCase();
+                    statusBadge.className = 'status-badge status-' + data.status;
+                    
+                    // Cập nhật status message
+                    let statusMsg = 'Đang xử lý...';
+                    if (data.status === 'processing') {
+                        statusMsg = `Đang xử lý: ${data.progress}%`;
+                    } else if (data.status === 'queued') {
+                        statusMsg = `Chờ xử lý...`;
+                    } else if (data.status === 'completed') {
+                        statusMsg = '✅ Xử lý hoàn thành!';
+                        if (liveProcessingInterval) clearInterval(liveProcessingInterval);
+                    } else if (data.status === 'error') {
+                        statusMsg = '❌ Lỗi: ' + (data.error || 'Unknown');
+                        if (liveProcessingInterval) clearInterval(liveProcessingInterval);
+                        showMessage('❌ Lỗi Xử Lý', data.error || 'Lỗi xử lý video', 'error');
+                    }
+                    document.getElementById('processingStatus').textContent = statusMsg;
+                    
+                    // Cập nhật info
+                    if (data.frame_info) {
+                        document.getElementById('liveProcessingInfo').textContent = 
+                            `Frame: ${data.frame_info.progress}% • ${new Date(data.frame_info.timestamp).toLocaleTimeString()}`;
+                    }
+                })
+                .catch(err => {
+                    console.error('Processing stats error:', err);
+                    document.getElementById('processingStatus').textContent = '⚠️ Lỗi cập nhật: ' + err.message;
+                });
+        }
+
+        // Violation Detail Functions
+        function showViolationDetail(event, jobId, violationIdx) {
+            event.preventDefault();
+            
+            fetch(`/api/results/${jobId}`)
+                .then(r => r.json())
+                .then(stats => {
+                    if (stats.recent_violations && stats.recent_violations[violationIdx]) {
+                        const violation = stats.recent_violations[violationIdx];
+                        
+                        // Cập nhật modal với thông tin vi phạm
+                        // Tạo đường dẫn ảnh từ violation data
+                        if (violation.image_path) {
+                            document.getElementById('violationImage').src = violation.image_path;
+                        } else {
+                            document.getElementById('violationImage').src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"%3E%3Crect fill="%23111" width="400" height="300"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%2300e0ff" font-size="24" font-family="monospace"%3ENo Image Available%3C/text%3E%3C/svg%3E';
+                        }
+                        
+                        document.getElementById('violationVehicleType').textContent = violation.vehicle_type || '-';
+                        document.getElementById('violationSeverity').textContent = violation.severity || '-';
+                        document.getElementById('violationSeverity').style.color = 
+                            violation.severity === 'SEVERE' ? '#ff6040' : 
+                            violation.severity === 'MODERATE' ? '#ff9800' : '#ffc107';
+                        document.getElementById('violationTime').textContent = violation.timestamp || '-';
+                        document.getElementById('violationTrackId').textContent = '#' + (violation.track_id || 'N/A');
+                        document.getElementById('violationFrameNumber').textContent = violation.frame || violation.frame_number || '-';
+                        
+                        // Mở modal
+                        document.getElementById('violationDetailModal').classList.add('active');
+                    } else {
+                        showMessage('⚠️ Cảnh báo', 'Không tìm thấy chi tiết vi phạm', 'info');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error loading violation:', err);
+                    showMessage('❌ Lỗi', 'Không thể tải chi tiết vi phạm: ' + err.message, 'error');
+                });
+        }
+
+        function closeViolationModal() {
+            document.getElementById('violationDetailModal').classList.remove('active');
+        }
+
+        // Settings Functions - Violation Detection Line
+        function updateViolationLine() {
+            const ratio = parseFloat(document.getElementById('violationLineRatio').value);
+            const val = ratio.toFixed(2);
+            document.getElementById('violationLineRatio-val').textContent = val;
+            
+            // Tính toán pixel Y dựa trên frame height (mặc định 720p)
+            const frameHeight = 720; // Default frame height
+            const pixelY = Math.round(frameHeight * ratio);
+            document.getElementById('violationLinePixel').textContent = pixelY;
+        }
+
+        function applyViolationLineSettings() {
+            const lineRatio = document.getElementById('violationLineRatio').value;
+            const visualize = document.getElementById('violationLineVisualize').checked;
+            const alertEnabled = document.getElementById('violationAlertEnabled').checked;
+            
+            // Gửi settings tới server
+            fetch('/api/settings/violation-line', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    line_ratio: parseFloat(lineRatio),
+                    visualize: visualize,
+                    alert_enabled: alertEnabled
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('✅ Thành công', 'Cấu hình đường phát hiện đã lưu', 'success');
+                } else {
+                    showMessage('❌ Lỗi', data.error || 'Không thể lưu cấu hình', 'error');
+                }
+            })
+            .catch(err => showMessage('❌ Lỗi', 'Lỗi: ' + err.message, 'error'));
+        }
+
+        function applyDetectionSettings() {
+            const severityThreshold = document.getElementById('severityThreshold').value;
+            const minDistance = document.getElementById('minViolationDistance').value;
+            const minFrames = document.getElementById('minDetectionFrames').value;
+            
+            // Gửi settings tới server
+            fetch('/api/settings/detection', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    severity_threshold: parseInt(severityThreshold),
+                    min_violation_distance: parseInt(minDistance),
+                    min_detection_frames: parseInt(minFrames)
+                })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage('✅ Thành công', 'Cấu hình phát hiện đã lưu', 'success');
+                } else {
+                    showMessage('❌ Lỗi', data.error || 'Không thể lưu cấu hình', 'error');
+                }
+            })
+            .catch(err => showMessage('❌ Lỗi', 'Lỗi: ' + err.message, 'error'));
+        }
+
+        // Initialize
+        refreshJobs();
+        setInterval(refreshJobs, 5000);
+
+        // History Functions
+        function loadHistory() {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; text-align: center;"><div class="spinner"></div> Đang tải...</td></tr>';
+            
+            fetch('/api/history?limit=100&offset=0')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success || !data.history || data.history.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" style="padding: 20px; text-align: center; color: var(--dim);">Chưa có dữ liệu lịch sử</td></tr>';
+                        return;
+                    }
+                    
+                    tbody.innerHTML = data.history.map(job => {
+                        const createdAt = new Date(job.created_at).toLocaleString('vi-VN');
+                        const statusColor = job.status === 'completed' ? 'var(--green)' : 
+                                           job.status === 'processing' ? 'var(--accent)' :
+                                           job.status === 'error' ? 'var(--red)' : 'var(--yellow)';
+                        return `
+                            <tr style="border-bottom: 1px solid var(--border); hover: background #0d1220;">
+                                <td style="padding: 10px; font-size: 11px; font-family: var(--font-mono); color: var(--dim);">${job.job_id.substring(0, 8)}</td>
+                                <td style="padding: 10px; color: var(--text);">${job.filename}</td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <span style="padding: 4px 8px; border-radius: 4px; background: ${statusColor}20; color: ${statusColor}; font-size: 11px; font-weight: bold;">
+                                        ${job.status.toUpperCase()}
+                                    </span>
+                                </td>
+                                <td style="padding: 10px; text-align: center; color: var(--accent);">${job.total_vehicles_in || 0}</td>
+                                <td style="padding: 10px; text-align: center; color: var(--red); font-weight: bold;">${job.total_violations || 0}</td>
+                                <td style="padding: 10px; text-align: center; font-size: 11px; color: var(--dim);">${createdAt}</td>
+                                <td style="padding: 10px; text-align: center;">
+                                    <button class="btn-secondary" onclick="viewJobDetails('${job.job_id}')" style="padding: 4px 8px; font-size: 10px;">📋 Xem</button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('');
+                })
+                .catch(err => {
+                    tbody.innerHTML = `<tr><td colspan="7" style="padding: 20px; text-align: center; color: var(--red);">Lỗi: ${err.message}</td></tr>`;
+                });
+        }
+
+        function loadDatabaseStats() {
+            const statsDiv = document.getElementById('databaseStats');
+            statsDiv.style.display = 'block';
+            
+            // Cập nhật UI để hiển thị "Đang tải..."
+            document.getElementById('stat-total-jobs').textContent = '...';
+            document.getElementById('stat-completed-jobs').textContent = '...';
+            document.getElementById('stat-total-violations').textContent = '...';
+            document.getElementById('stat-total-vehicles').textContent = '...';
+            
+            fetch('/api/statistics')
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) {
+                        showMessage('❌ Lỗi', 'Không thể tải thống kê database', 'error');
+                        return;
+                    }
+                    
+                    const stats = data.statistics;
+                    document.getElementById('stat-total-jobs').textContent = stats.total_jobs || 0;
+                    document.getElementById('stat-completed-jobs').textContent = stats.completed_jobs || 0;
+                    document.getElementById('stat-total-violations').textContent = stats.total_violations || 0;
+                    document.getElementById('stat-total-vehicles').textContent = stats.total_vehicles_processed || 0;
+                    
+                    showMessage('✅ Thành công', 'Đã tải thống kê database', 'success');
+                })
+                .catch(err => {
+                    showMessage('❌ Lỗi', 'Lỗi: ' + err.message, 'error');
+                });
+        }
+
+        function viewJobDetails(jobId) {
+            fetch(`/api/history/${jobId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success || !data.job) {
+                        showMessage('❌ Lỗi', 'Không tìm thấy thông tin job', 'error');
+                        return;
+                    }
+                    
+                    const job = data.job;
+                    const violations = data.violations || [];
+                    const createdAt = new Date(job.created_at).toLocaleString('vi-VN');
+                    const completedAt = job.completed_at ? new Date(job.completed_at).toLocaleString('vi-VN') : 'Chưa hoàn thành';
+                    
+                    // Hiển thị chi tiết trong modal
+                    const modal = document.getElementById('modal');
+                    document.getElementById('modalIcon').textContent = '📋';
+                    document.getElementById('modalTitle').textContent = 'Chi tiết Job: ' + job.filename;
+                    
+                    const jobStats = job.stats || {};
+                    const detailsHTML = `
+                        <div style="text-align: left; font-size: 12px;">
+                            <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border);">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                    <div>
+                                        <div style="color: var(--dim); font-size: 10px;">JOB ID</div>
+                                        <div style="color: var(--text); margin-top: 5px; font-family: var(--font-mono); font-size: 11px;">${job.job_id}</div>
+                                    </div>
+                                    <div>
+                                        <div style="color: var(--dim); font-size: 10px;">TRẠNG THÁI</div>
+                                        <div style="color: var(--text); margin-top: 5px;">
+                                            <span style="padding: 2px 6px; border-radius: 3px; background: ${
+                                                job.status === 'completed' ? 'rgba(0, 232, 122, 0.2)' : 'rgba(255, 208, 64, 0.2)'
+                                            }; color: ${job.status === 'completed' ? 'var(--green)' : 'var(--yellow)'};">
+                                                ${job.status.toUpperCase()}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <div style="color: var(--dim); font-size: 10px;">NGÀY TẠO</div>
+                                        <div style="color: var(--text); margin-top: 5px;">${createdAt}</div>
+                                    </div>
+                                    <div>
+                                        <div style="color: var(--dim); font-size: 10px;">HOÀN THÀNH</div>
+                                        <div style="color: var(--text); margin-top: 5px;">${completedAt}</div>
+                                    </div>
+                                    <div>
+                                        <div style="color: var(--dim); font-size: 10px;">THỜI GIAN XỬ LÝ</div>
+                                        <div style="color: var(--text); margin-top: 5px;">${job.duration_seconds ? job.duration_seconds.toFixed(1) + 's' : 'N/A'}</div>
+                                    </div>
+                                    <div>
+                                        <div style="color: var(--dim); font-size: 10px;">KÍCH THƯỚC FILE</div>
+                                        <div style="color: var(--text); margin-top: 5px;">${job.file_size_mb ? job.file_size_mb.toFixed(2) + ' MB' : 'N/A'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border);">
+                                <div style="color: var(--accent); font-weight: bold; margin-bottom: 10px;">📊 THỐNG KÊ XỬ LÝ</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div><span style="color: var(--dim);">Tổng Frames:</span> <span style="color: var(--text);">${jobStats.total_frames || 0}</span></div>
+                                    <div><span style="color: var(--dim);">FPS:</span> <span style="color: var(--text);">${(jobStats.fps || 0).toFixed(1)}</span></div>
+                                    <div><span style="color: var(--dim);">Thời gian video:</span> <span style="color: var(--text);">${(jobStats.video_duration || 0).toFixed(1)}s</span></div>
+                                    <div><span style="color: var(--dim);">Mật độ giao thông:</span> <span style="color: var(--text);">${(jobStats.traffic_density || 0).toFixed(1)}%</span></div>
+                                    <div><span style="color: var(--dim);">Xe vào:</span> <span style="color: var(--accent);">${jobStats.total_vehicles_in || 0}</span></div>
+                                    <div><span style="color: var(--dim);">Xe ra:</span> <span style="color: var(--accent);">${jobStats.total_vehicles_out || 0}</span></div>
+                                </div>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--border);">
+                                <div style="color: var(--red); font-weight: bold; margin-bottom: 10px;">🚨 VI PHẠM</div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                    <div><span style="color: var(--dim);">Tổng:</span> <span style="color: var(--red); font-weight: bold;">${jobStats.violations?.total || 0}</span></div>
+                                    <div><span style="color: var(--dim);">Tỷ lệ:</span> <span style="color: var(--text);">${(jobStats.violation_rate || 0).toFixed(2)}%</span></div>
+                                    <div><span style="color: var(--dim);">Nguy hiểm:</span> <span style="color: #ff6040;">${jobStats.violations?.severe || 0}</span></div>
+                                    <div><span style="color: var(--dim);">Trung bình:</span> <span style="color: #ff9800;">${jobStats.violations?.moderate || 0}</span></div>
+                                </div>
+                            </div>
+                            
+                            ${violations.length > 0 ? `
+                                <div>
+                                    <div style="color: var(--accent); font-weight: bold; margin-bottom: 10px;">📋 VI PHẠM GẦN ĐÂY</div>
+                                    <div style="background: #0d1220; border-radius: 6px; padding: 10px; max-height: 150px; overflow-y: auto;">
+                                        ${violations.slice(0, 5).map(v => `
+                                            <div style="padding: 6px; border-bottom: 1px solid var(--border); font-size: 11px;">
+                                                <span style="color: var(--dim);">${v.timestamp}</span> - 
+                                                <span style="color: ${v.severity === 'SEVERE' ? '#ff6040' : v.severity === 'MODERATE' ? '#ff9800' : '#ffc107'}">${v.severity}</span>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    
+                    document.getElementById('modalMessage').innerHTML = detailsHTML;
+                    modal.classList.add('active');
+                })
+                .catch(err => showMessage('❌ Lỗi', 'Lỗi: ' + err.message, 'error'));
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // CHATBOT FUNCTIONS
+        // ──────────────────────────────────────────────────────────
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+            
+            // Hiển thị tin nhắn người dùng
+            const messagesDiv = document.getElementById('chatMessages');
+            
+            // Nếu là tin nhắn đầu tiên, xóa welcome message
+            if (messagesDiv.innerHTML.includes('👋')) {
+                messagesDiv.innerHTML = '';
+            }
+            
+            messagesDiv.innerHTML += `
+                <div style="margin-bottom: 15px; text-align: right;">
+                    <div style="display: inline-block; background: var(--accent); color: black; padding: 10px 15px; border-radius: 8px; max-width: 80%; word-wrap: break-word;">
+                        ${escapeHtml(message)}
+                    </div>
+                    <div style="font-size: 10px; color: var(--dim); margin-top: 3px;">${new Date().toLocaleTimeString()}</div>
+                </div>
+            `;
+            
+            // Cuộn xuống
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Xóa input
+            input.value = '';
+            
+            // Gửi tới server
+            fetch('/api/chatbot/message', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: message})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    // Hiển thị phản hồi
+                    const response = data.response;
+                    messagesDiv.innerHTML += `
+                        <div style="margin-bottom: 15px;">
+                            <div style="display: inline-block; background: var(--panel); border: 1px solid var(--border); padding: 10px 15px; border-radius: 8px; max-width: 80%; word-wrap: break-word;">
+                                ${response.replace(/\n/g, '<br>')}
+                            </div>
+                            <div style="font-size: 10px; color: var(--dim); margin-top: 3px;">${new Date().toLocaleTimeString()}</div>
+                        </div>
+                    `;
+                } else {
+                    messagesDiv.innerHTML += `
+                        <div style="margin-bottom: 15px;">
+                            <div style="display: inline-block; background: var(--red); color: white; padding: 10px 15px; border-radius: 8px;">
+                                ❌ Lỗi: ${escapeHtml(data.error)}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Cuộn xuống
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                input.focus();
+            })
+            .catch(err => {
+                messagesDiv.innerHTML += `
+                    <div style="margin-bottom: 15px;">
+                        <div style="display: inline-block; background: var(--red); color: white; padding: 10px 15px; border-radius: 8px;">
+                            ❌ Lỗi: ${escapeHtml(err.message)}
+                        </div>
+                    </div>
+                `;
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                input.focus();
+            });
+        }
+
+        function clearChatHistory() {
+            if (!confirm('Bạn chắc chắn muốn xóa lịch sử trò chuyện?')) return;
+            
+            fetch('/api/chatbot/clear', {method: 'POST'})
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('chatMessages').innerHTML = `
+                        <div style="text-align: center; color: var(--dim); padding: 20px;">
+                            <div style="font-size: 32px; margin-bottom: 10px;">👋</div>
+                            <div>Lịch sử đã được xóa. Chào mừng bắt đầu trò chuyện mới!</div>
+                        </div>
+                    `;
+                    showMessage('✅ Thành công', 'Lịch sử đã được xóa', 'success');
+                } else {
+                    showMessage('❌ Lỗi', data.error || 'Không thể xóa lịch sử', 'error');
+                }
+            })
+            .catch(err => showMessage('❌ Lỗi', err.message, 'error'));
+        }
+
+        function updateChatbotStatus() {
+            fetch('/api/chatbot/status')
+            .then(r => r.json())
+            .then(data => {
+                const statusEl = document.getElementById('chatbot-status');
+                if (data.success) {
+                    statusEl.innerHTML = `
+                        <span style="color: ${data.using_openai ? 'var(--green)' : 'var(--accent)'};">
+                            ${data.status}
+                        </span>
+                    `;
+                } else {
+                    statusEl.innerHTML = '<span style="color: var(--red);">❌ Lỗi kết nối</span>';
+                }
+            })
+            .catch(err => {
+                document.getElementById('chatbot-status').innerHTML = '<span style="color: var(--red);">❌ Lỗi: ' + escapeHtml(err.message) + '</span>';
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========== BLOCKCHAIN FUNCTIONS ==========
+
+        // Initialize MetaMask UI
+        let metamaskConnected = false;
+        let metamaskAccount = null;
+        
+        function updateMetaMaskUI() {
+            if (metamaskConnected && metamaskAccount) {
+                document.getElementById('metamask-status').innerHTML = `
+                    <div style="color: var(--green); font-weight: bold;">✓ Đã kết nối</div>
+                    <div style="font-size: 11px; color: var(--dim); margin-top: 5px;">
+                        <div>Tài khoản: ${metamaskAccount.substring(0, 6)}...${metamaskAccount.substring(38)}</div>
+                        <div>Mạng: Connected</div>
+                    </div>
+                `;
+                document.getElementById('metamask-connect-btn').textContent = '✓ Đã kết nối';
+                document.getElementById('metamask-connect-btn').disabled = true;
+            } else {
+                document.getElementById('metamask-status').innerHTML = `⚠️ Chưa kết nối MetaMask`;
+                document.getElementById('metamask-connect-btn').textContent = 'Kết nối MetaMask';
+                document.getElementById('metamask-connect-btn').disabled = false;
+            }
+        }
+        
+        // Connect MetaMask
+        async function connectMetaMask() {
+            if (!window.ethereum) {
+                showMessage('❌ Lỗi', 'Vui lòng cài đặt MetaMask extension', 'error');
+                return;
+            }
+            
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                if (accounts && accounts.length > 0) {
+                    metamaskConnected = true;
+                    metamaskAccount = accounts[0];
+                    updateMetaMaskUI();
+                    showMessage('✅ Thành công', 'Đã kết nối MetaMask', 'success');
+                    
+                    // Gửi connection info tới backend
+                    fetch('/api/metamask/connect', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            account: accounts[0],
+                            timestamp: new Date().toISOString()
+                        })
+                    }).catch(err => console.error('Error notifying backend:', err));
+                }
+            } catch (error) {
+                console.error('MetaMask connection error:', error);
+                showMessage('❌ Lỗi', 'Lỗi kết nối MetaMask: ' + error.message, 'error');
+            }
+        }
+
+        // Update blockchain status display
+        function updateBlockchainStatus() {
+            fetch('/api/blockchain/status')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.data) {
+                        document.getElementById('network-display').textContent = data.data.network_name || '-';
+                        document.getElementById('balance-display').textContent = (data.data.balance || 0).toFixed(4) + ' ETH';
+                        document.getElementById('block-display').textContent = data.data.latest_block || '-';
+                        document.getElementById('gas-display').textContent = (data.data.gas_price || 0) + ' Gwei';
+                    } else {
+                        // Blockchain not configured yet
+                        document.getElementById('network-display').textContent = '⚠️ Chưa config';
+                        document.getElementById('balance-display').textContent = '⚠️ Chưa kết nối';
+                        document.getElementById('block-display').textContent = '-';
+                        document.getElementById('gas-display').textContent = '-';
+                    }
+                })
+                .catch(err => {
+                    document.getElementById('network-display').textContent = '❌ Lỗi';
+                    document.getElementById('balance-display').textContent = '❌ Lỗi';
+                    console.error('Error updating blockchain status:', err);
+                });
+        }
+
+        // Record violation to blockchain
+        function recordViolationToBlockchain(event) {
+            event.preventDefault();
+            
+            if (!metamaskConnected) {
+                showMessage('❌ Lỗi', 'Vui lòng kết nối MetaMask trước', 'error');
+                return;
+            }
+
+            const vehicleId = document.getElementById('vehicle-id').value;
+            const violationType = document.getElementById('violation-type').value;
+            const severity = document.getElementById('severity').value;
+            const location = document.getElementById('location').value;
+            const imageHash = document.getElementById('image-hash').value;
+
+            const resultDiv = document.getElementById('violation-result');
+            resultDiv.innerHTML = '<div class="spinner" style="display: inline-block;"></div> Đang ghi lên blockchain...';
+
+            fetch('/api/blockchain/record-violation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    vehicle_id: vehicleId,
+                    violation_type: violationType,
+                    severity: severity,
+                    location: location,
+                    image_hash: imageHash,
+                    user_account: metamaskAccount
+                })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        resultDiv.innerHTML = `
+                            <div style="background: rgba(0, 232, 122, .15); border: 1px solid var(--green); border-radius: 6px; padding: 12px; color: var(--green);">
+                                ✓ Ghi thành công!<br>
+                                <small>TX Hash: <code>${data.transaction.tx_hash || 'pending'}</code></small><br>
+                                <small>Violation Hash: <code>${data.transaction.violation_hash || 'N/A'}</code></small><br>
+                                <small>Gửi từ: ${metamaskAccount.substring(0, 6)}...${metamaskAccount.substring(38)}</small>
+                            </div>
+                        `;
+                        document.getElementById('violation-form').reset();
+                        // Add to transaction history
+                        addTransactionToHistory(data.transaction);
+                        updateBlockchainStatus();
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div style="background: rgba(255, 45, 94, .15); border: 1px solid var(--red); border-radius: 6px; padding: 12px; color: var(--red);">
+                                ✗ Lỗi: ${data.error}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(err => {
+                    resultDiv.innerHTML = `
+                        <div style="background: rgba(255, 45, 94, .15); border: 1px solid var(--red); border-radius: 6px; padding: 12px; color: var(--red);">
+                            ✗ Lỗi: ${err.message}
+                        </div>
+                    `;
+                });
+        }
+
+        // Query vehicle violations
+        function queryVehicleViolations() {
+            const vehicleId = document.getElementById('search-vehicle-id').value;
+            if (!vehicleId) {
+                showMessage('⚠️ Cảnh báo', 'Vui lòng nhập biển số xe', 'info');
+                return;
+            }
+
+            const resultDiv = document.getElementById('violations-result');
+            resultDiv.innerHTML = '<div class="spinner" style="display: inline-block;"></div> Đang tìm kiếm...';
+
+            fetch(`/api/blockchain/violations/${vehicleId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success && data.data && data.data.length > 0) {
+                        resultDiv.innerHTML = data.data.map(v => `
+                            <div style="padding: 10px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 11px;">
+                                <div>
+                                    <div style="color: var(--dim);">Loại:</div>
+                                    <div>${v.violation_type}</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--dim);">Mức độ:</div>
+                                    <div style="color: ${v.severity === 'severe' ? 'var(--red)' : v.severity === 'moderate' ? '#ff9800' : 'var(--green)'}">${v.severity}</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--dim);">Thời gian:</div>
+                                    <div>${new Date(v.timestamp * 1000).toLocaleString('vi-VN')}</div>
+                                </div>
+                                <div>
+                                    <div style="color: var(--dim);">Hash:</div>
+                                    <div style="word-break: break-all; font-family: monospace; font-size: 10px;">${v.violation_hash}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        resultDiv.innerHTML = '<p style="color: var(--dim); text-align: center; padding: 20px;">Không tìm thấy vi phạm</p>';
+                    }
+                })
+                .catch(err => {
+                    resultDiv.innerHTML = `<p style="color: var(--red);">Lỗi: ${err.message}</p>`;
+                });
+        }
+
+        // Add transaction to history
+        function addTransactionToHistory(transaction) {
+            const historyDiv = document.getElementById('transaction-history');
+            const entry = document.createElement('div');
+            const txId = transaction.tx_hash || 'tx_' + Date.now();
+            entry.style.cssText = 'padding: 10px; border-bottom: 1px solid var(--border); font-size: 11px; color: var(--text);';
+            entry.setAttribute('data-tx-id', txId);
+            entry.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="flex: 1;">
+                        <strong>${transaction.vehicle_id}</strong> - ${transaction.violation_type}
+                        <div style="color: var(--dim); font-size: 10px; margin-top: 3px;">
+                            ${new Date().toLocaleString('vi-VN')}
+                        </div>
+                    </div>
+                    <div style="color: var(--green); font-weight: bold; margin-right: 10px;">✓</div>
+                    <div style="display: flex; gap: 5px;">
+                        <button onclick="editTransaction('${txId}')" style="padding: 4px 8px; background: var(--accent); border: none; border-radius: 3px; cursor: pointer; font-size: 10px; color: white;">✏️ Sửa</button>
+                        <button onclick="deleteTransaction('${txId}')" style="padding: 4px 8px; background: #d32f2f; border: none; border-radius: 3px; cursor: pointer; font-size: 10px; color: white;">🗑️</button>
+                    </div>
+                </div>
+            `;
+            
+            // Store transaction data in element
+            entry.dataset.transaction = JSON.stringify(transaction);
+            
+            // Replace placeholder if it exists
+            if (historyDiv.querySelector('p')) {
+                historyDiv.innerHTML = '';
+            }
+            historyDiv.insertBefore(entry, historyDiv.firstChild);
+        }
+
+        // ============= EDIT TRANSACTION FUNCTIONS =============
+        let currentEditTransaction = null;
+
+        function editTransaction(txId) {
+            const entry = document.querySelector(`[data-tx-id="${txId}"]`);
+            if (!entry) return;
+            
+            currentEditTransaction = JSON.parse(entry.dataset.transaction);
+            
+            // Fill form with transaction data
+            document.getElementById('edit-vehicle-id').value = currentEditTransaction.vehicle_id || '';
+            document.getElementById('edit-violation-type').value = currentEditTransaction.violation_type || '';
+            document.getElementById('edit-severity').value = currentEditTransaction.severity || '';
+            document.getElementById('edit-location').value = currentEditTransaction.location || '';
+            document.getElementById('edit-image-hash').value = currentEditTransaction.image_hash || '';
+            
+            // Show modal
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+            currentEditTransaction = null;
+        }
+
+        async function submitEditedTransaction() {
+            if (!currentEditTransaction) return;
+            
+            const updatedData = {
+                tx_hash: currentEditTransaction.tx_hash,
+                vehicle_id: document.getElementById('edit-vehicle-id').value,
+                violation_type: document.getElementById('edit-violation-type').value,
+                severity: document.getElementById('edit-severity').value,
+                location: document.getElementById('edit-location').value,
+                image_hash: document.getElementById('edit-image-hash').value
+            };
+            
+            try {
+                // Update in database
+                const response = await fetch('/api/blockchain/update-violation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatedData)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Send to MetaMask
+                    const txResult = await sendViolationViaMetaMask(
+                        updatedData.vehicle_id,
+                        updatedData.violation_type,
+                        updatedData.severity,
+                        updatedData.location,
+                        updatedData.image_hash
+                    );
+                    
+                    showMessage('✅ Sửa thành công', 'Giao dịch đã được cập nhật và gửi lại', 'success');
+                    closeEditModal();
+                    
+                    // Refresh history
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showMessage('❌ Lỗi', result.message, 'error');
+                }
+            } catch (error) {
+                showMessage('❌ Lỗi', 'Không thể cập nhật giao dịch: ' + error.message, 'error');
+            }
+        }
+
+        function deleteTransaction(txId) {
+            if (!confirm('Bạn chắc chắn muốn xóa giao dịch này?')) return;
+            
+            const entry = document.querySelector(`[data-tx-id="${txId}"]`);
+            if (entry) {
+                entry.remove();
+            }
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', () => {
+            updateChatbotStatus();
+            updateMetaMaskUI();
+            updateBlockchainStatus();
+            
+            // Update blockchain status every 10 seconds
+            setInterval(() => {
+                if (document.getElementById('blockchain').style.display !== 'none') {
+                    updateBlockchainStatus();
+                }
+            }, 10000);
+        });
+
+        // Cập nhật trạng thái chatbot khi load page
+        window.addEventListener('load', () => {
+            updateChatbotStatus();
+        });
+
+        // ============= METAMASK TRANSACTION SIGNING =============
+        // Contract ABI for TrafficViolationRegistry
+        const VIOLATION_CONTRACT_ABI = [
+            {
+                "inputs": [
+                    {"name": "_violationHash", "type": "bytes32"},
+                    {"name": "_vehicleId", "type": "string"},
+                    {"name": "_timestamp", "type": "uint256"},
+                    {"name": "_violationType", "type": "string"},
+                    {"name": "_severity", "type": "string"},
+                    {"name": "_location", "type": "string"},
+                    {"name": "_imageHash", "type": "string"}
+                ],
+                "name": "recordViolation",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [{"name": "_violationHash", "type": "bytes32"}],
+                "name": "violations",
+                "outputs": [
+                    {"name": "vehicleId", "type": "string"},
+                    {"name": "timestamp", "type": "uint256"},
+                    {"name": "violationType", "type": "string"},
+                    {"name": "severity", "type": "string"},
+                    {"name": "recordedBy", "type": "address"},
+                    {"name": "location", "type": "string"},
+                    {"name": "imageHash", "type": "string"},
+                    {"name": "confirmed", "type": "bool"}
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        async function sendViolationViaMetaMask(vehicleId, violationType, severity, location, imageHash) {
+            try {
+                // Fallback to mock if MetaMask not installed
+                if (!window.ethereum) {
+                    console.warn('⚠️ MetaMask không được cài đặt, dùng mock address');
+                    
+                    const mockContractAddress = '0x' + '1'.repeat(40);
+                    const mockTxHash = '0x' + Array(64).fill(0).map(() => Math.floor(Math.random() * 16).toString(16)).join('');
+                    const timestamp = Math.floor(Date.now() / 1000);
+                    
+                    // Lưu contract address
+                    localStorage.setItem('contractAddress', mockContractAddress);
+                    
+                    showMessage('ℹ️ Test Mode', 'Dùng mock transaction (không có MetaMask)', 'info');
+                    
+                    return {
+                        tx_hash: mockTxHash,
+                        violation_hash: 'mock_' + Date.now(),
+                        block_number: null,
+                        status: 'pending',
+                        vehicle_id: vehicleId,
+                        timestamp: timestamp,
+                        from: '0x' + '0'.repeat(40)
+                    };
+                }
+
+                // Lấy contract address
+                let contractAddress = prompt('Nhập Contract Address (Sepolia):\n\nFormat: 0x1234567890abcdef1234567890abcdef12345678\n\nHoặc bỏ trống để test:', localStorage.getItem('contractAddress') || '');
+                
+                // Nếu bỏ trống, dùng mock address
+                if (!contractAddress) {
+                    contractAddress = '0x' + '1'.repeat(40); // Mock: 0x1111...1111
+                    showMessage('ℹ️ Thông tin', 'Dùng mock contract address cho test\n(Cần deploy smart contract thực)', 'info');
+                }
+
+                // Validate address format (nới lỏng - cho phép không có 0x)
+                if (!contractAddress.startsWith('0x')) {
+                    contractAddress = '0x' + contractAddress;
+                }
+
+                localStorage.setItem('contractAddress', contractAddress);
+
+                // Get current account
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                if (!accounts || accounts.length === 0) {
+                    throw new Error('Không tìm thấy tài khoản MetaMask');
+                }
+                const userAddress = accounts[0];
+
+                // Get network ID
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+                console.log('📡 Chain ID:', chainId);
+                
+                // For Sepolia testnet: chainId should be 0xaa36a7 (11155111)
+                if (chainId !== '0xaa36a7') {
+                    const switchResult = confirm('Bạn phải dùng Sepolia testnet. Bấm OK để chuyển mạng.');
+                    if (switchResult) {
+                        try {
+                            await window.ethereum.request({
+                                method: 'wallet_switchEthereumChain',
+                                params: [{ chainId: '0xaa36a7' }],
+                            });
+                        } catch (switchError) {
+                            throw new Error('Không thể chuyển sang Sepolia: ' + switchError.message);
+                        }
+                    } else {
+                        throw new Error('Sepolia testnet là bắt buộc');
+                    }
+                }
+
+                const timestamp = Math.floor(Date.now() / 1000);
+                
+                console.log('🚀 Gửi transaction MetaMask:');
+                console.log('  From:', userAddress);
+                console.log('  To:', contractAddress);
+                console.log('  Vehicle:', vehicleId);
+                console.log('  Timestamp:', timestamp);
+
+                // Send transaction via MetaMask (empty data for now - would need ABI encoding in production)
+                const txHash = await window.ethereum.request({
+                    method: 'eth_sendTransaction',
+                    params: [{
+                        to: contractAddress,
+                        from: userAddress,
+                        value: '0x0',
+                        data: '0x',
+                        gas: '0x927c0' // ~600000 gas
+                    }],
+                });
+
+                console.log('⏳ Transaction sent. Hash:', txHash);
+
+                return {
+                    tx_hash: txHash,
+                    violation_hash: 'pending_' + Date.now(),
+                    block_number: null,
+                    status: 'pending',
+                    vehicle_id: vehicleId,
+                    timestamp: timestamp,
+                    from: userAddress
+                };
+            } catch (error) {
+                console.error('❌ Lỗi gửi transaction:', error);
+                throw error;
+            }
+        }
+
+        // Override function ghi vi phạm để dùng MetaMask
+        async function recordViolationToBlockchainViaMetaMask(event) {
+            event.preventDefault();
+
+            // Allow test without MetaMask connected (will use mock)
+            // if (!metamaskConnected) {
+            //     showMessage('❌ Lỗi', 'Vui lòng kết nối MetaMask trước', 'error');
+            //     return;
+            // }
+
+            const vehicleId = document.getElementById('vehicle-id').value;
+            const violationType = document.getElementById('violation-type').value;
+            const severity = document.getElementById('severity').value;
+            const location = document.getElementById('location').value;
+            const imageHash = document.getElementById('image-hash').value;
+
+            if (!vehicleId || !violationType || !severity) {
+                showMessage('❌ Lỗi', 'Vui lòng điền đầy đủ thông tin', 'error');
+                return;
+            }
+
+            const resultDiv = document.getElementById('violation-result');
+            resultDiv.innerHTML = '<div class="spinner" style="display: inline-block;"></div> Chờ MetaMask xác nhận...';
+
+            try {
+                // Gửi qua MetaMask
+                const txResult = await sendViolationViaMetaMask(
+                    vehicleId,
+                    violationType,
+                    severity,
+                    location,
+                    imageHash
+                );
+
+                // Lưu vào backend
+                const backendRes = await fetch('/api/blockchain/record-violation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        vehicle_id: vehicleId,
+                        violation_type: violationType,
+                        severity: severity,
+                        location: location,
+                        image_hash: imageHash,
+                        user_account: metamaskAccount,
+                        tx_hash: txResult.tx_hash,
+                        confirmed: true
+                    })
+                }).then(r => r.json()).catch(() => ({}));
+
+                resultDiv.innerHTML = `
+                    <div style="background: rgba(0, 232, 122, .15); border: 1px solid var(--green); border-radius: 6px; padding: 12px; color: var(--green);">
+                        ✅ Ghi blockchain thành công!<br>
+                        <small>TX Hash: <code>${txResult.tx_hash}</code></small><br>
+                        <small>Block: #${txResult.block_number}</small><br>
+                        <small>Vehicle: <code>${vehicleId}</code></small><br>
+                        <small>Gửi từ: ${metamaskAccount ? metamaskAccount.substring(0, 6) + '...' + metamaskAccount.substring(38) : 'Mock Mode'}</small>
+                    </div>
+                `;
+                document.getElementById('violation-form').reset();
+                addTransactionToHistory(txResult);
+                updateBlockchainStatus();
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.innerHTML = `
+                    <div style="background: rgba(255, 45, 94, .15); border: 1px solid var(--red); border-radius: 6px; padding: 12px; color: var(--red);">
+                        ❌ Lỗi: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────
+        // PARKING LOT DETECTION FUNCTIONS
+        // ──────────────────────────────────────────────────────────
+
+        let parkingCurrentJobId = null;
+
+        // Initialize parking UI
+        function initParkingUI() {
+            // File input change handler
+            const fileInput = document.getElementById('parkingFileInput');
+            if (fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    if (e.target.files[0]) {
+                        const filename = e.target.files[0].name;
+                        const uploadZone = document.getElementById('parkingUploadZone');
+                        if (uploadZone) {
+                            uploadZone.innerHTML = `
+                                <div style="font-size: 32px; margin-bottom: 10px;">✅</div>
+                                <div style="font-size: 14px; color: var(--green);">
+                                    <strong>${filename}</strong>
+                                </div>
+                                <div style="font-size: 12px; color: var(--dim); margin-top: 5px;">
+                                    ${(e.target.files[0].size / 1024 / 1024).toFixed(2)} MB
+                                </div>
+                            `;
+                        }
+                    }
+                });
+            }
+
+            // Confidence slider handler
+            const confidenceSlider = document.getElementById('parkingConfidence');
+            if (confidenceSlider) {
+                confidenceSlider.addEventListener('input', function(e) {
+                    document.getElementById('parkingConfidenceValue').textContent = e.target.value;
+                });
+            }
+        }
+
+        // Initialize when page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initParkingUI);
+        } else {
+            initParkingUI();
+        }
+
+        // Parking file upload
+        function uploadParkingVideo() {
+            const fileInput = document.getElementById('parkingFileInput');
+            const method = document.getElementById('parkingMethod').value;
+            const confidence = document.getElementById('parkingConfidence').value;
+
+            if (!fileInput.files[0]) {
+                alert('📹 Vui lòng chọn file video');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            formData.append('confidence', confidence);
+            formData.append('method', method);
+
+            // Show progress
+            document.getElementById('parkingProgressSection').style.display = 'block';
+            document.getElementById('parkingStatusContainer').style.display = 'none';
+            document.getElementById('parkingEmptyState').style.display = 'none';
+
+            fetch('/api/parking/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    parkingCurrentJobId = data.parking_job_id;
+                    // Start monitoring progress
+                    monitorParkingProgress();
+                } else {
+                    alert('❌ Lỗi: ' + data.error);
+                    document.getElementById('parkingProgressSection').style.display = 'none';
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('❌ Lỗi upload video');
+                document.getElementById('parkingProgressSection').style.display = 'none';
+            });
+        }
+
+        // Monitor parking job progress
+        function monitorParkingProgress() {
+            if (!parkingCurrentJobId) return;
+
+            const interval = setInterval(() => {
+                fetch(`/api/parking/status/${parkingCurrentJobId}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        const progress = data.progress || 0;
+                        document.getElementById('parkingProgressBar').style.width = progress + '%';
+                        document.getElementById('parkingProgressPercent').textContent = progress + '%';
+
+                        if (data.status === 'COMPLETED') {
+                            clearInterval(interval);
+                            document.getElementById('parkingProgressSection').style.display = 'none';
+                            loadParkingOccupancy();
+                        } else if (data.status === 'ERROR') {
+                            clearInterval(interval);
+                            alert('❌ Lỗi: ' + (data.error || 'Unknown'));
+                            document.getElementById('parkingProgressSection').style.display = 'none';
+                        }
+                    }
+                })
+                .catch(err => console.error('Error monitoring:', err));
+            }, 1000);
+        }
+
+        // Load parking occupancy results
+        function loadParkingOccupancy() {
+            if (!parkingCurrentJobId) return;
+
+            fetch(`/api/parking/occupancy/${parkingCurrentJobId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const parkingData = data.data;
+                    const stats = parkingData.stats || {};
+                    
+                    document.getElementById('parkingTotalSlots').textContent = stats.total_slots || '0';
+                    document.getElementById('parkingEmptySlots').textContent = stats.empty_slots || '0';
+                    document.getElementById('parkingOccupiedSlots').textContent = stats.occupied_slots || '0';
+                    
+                    // Parse occupancy rate
+                    let occupancyRate = 0;
+                    const occupancyStr = stats.occupancy_rate || '0%';
+                    if (typeof occupancyStr === 'string') {
+                        occupancyRate = parseFloat(occupancyStr) / 100;
+                    } else {
+                        occupancyRate = occupancyStr;
+                    }
+                    
+                    document.getElementById('parkingOccupancyPercent').textContent = Math.round(occupancyRate * 100) + '%';
+                    document.getElementById('parkingOccupancyBar').style.width = (occupancyRate * 100) + '%';
+                    
+                    document.getElementById('parkingLastUpdate').textContent = new Date().toLocaleString('vi-VN');
+                    
+                    document.getElementById('parkingStatusContainer').style.display = 'block';
+                    document.getElementById('parkingEmptyState').style.display = 'none';
+                } else {
+                    alert('Loi: ' + data.error);
+                }
+            })
+            .catch(err => {
+                console.error('Error loading occupancy:', err);
+                alert('Loi tai ket qua');
+            });
+        }
+
+        // Download parking report
+        function downloadParkingReport() {
+            if (!parkingCurrentJobId) {
+                alert('Chua co ket qua de tai');
+                return;
+            }
+
+            fetch(`/api/parking/occupancy/${parkingCurrentJobId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const parkingData = data.data;
+                    const stats = parkingData.stats || {};
+                    
+                    const report = `
+BAO CAO PHAT HIEN BAI DO XE
+===========================
+Thoi gian: ${new Date().toLocaleString('vi-VN')}
+
+THONG KE CHUNG
+--------------
+- Tong so cho do: ${stats.total_slots || 0}
+- Cho trong: ${stats.empty_slots || 0}
+- Da do: ${stats.occupied_slots || 0}
+- Ty le chiem dung: ${stats.occupancy_rate || '0%'}
+
+DANH SACH CHO TRONG
+-------------------
+${parkingData.empty_slots?.map((slot, i) => `${i + 1}. Cho ${slot.slot_id}`).join('\n') || 'N/A'}
+
+DANH SACH DA DO
+-------------------
+${parkingData.occupied_slots?.map((slot, i) => `${i + 1}. Cho ${slot.slot_id} (Xe ${slot.track_id || 'Unknown'})`).join('\n') || 'Khong co'}
+
+CHI TIET
+--------
+Tong file: ${JSON.stringify(parkingData, null, 2)}
+                    `;
+                    
+                    const blob = new Blob([report], { type: 'text/plain' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `parking_report_${new Date().getTime()}.txt`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                }
+            });
+        }
+
+        // Download parking video
+        function downloadParkingVideo() {
+            if (!parkingCurrentJobId) {
+                alert('Chua co ket qua de tai');
+                return;
+            }
+
+            // Download video file
+            const videoUrl = `/api/parking/video/${parkingCurrentJobId}`;
+            const a = document.createElement('a');
+            a.href = videoUrl;
+            a.download = `parking_${parkingCurrentJobId}_visualization.mp4`;
+            a.click();
+        }
+    </script>
+
+    <!-- Edit Transaction Modal -->
+    <div id="edit-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 9999; justify-content: center; align-items: center;">
+        <div style="background: var(--dark-bg); border: 1px solid var(--accent); border-radius: 8px; padding: 20px; max-width: 400px; width: 90%; max-height: 80vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="color: var(--accent); margin: 0;">✏️ Sửa Giao Dịch</h3>
+                <button onclick="closeEditModal()" style="background: none; border: none; color: var(--text); cursor: pointer; font-size: 18px;">✕</button>
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="color: var(--text); font-size: 12px; display: block; margin-bottom: 5px;">ID Xe</label>
+                <input type="text" id="edit-vehicle-id" placeholder="Nhập ID xe" style="width: 100%; padding: 8px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); box-sizing: border-box;">
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="color: var(--text); font-size: 12px; display: block; margin-bottom: 5px;">Loại Vi Phạm</label>
+                <select id="edit-violation-type" style="width: 100%; padding: 8px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); box-sizing: border-box;">
+                    <option value="red_light">Vượt đèn đỏ</option>
+                    <option value="speeding">Vượt tốc độ</option>
+                    <option value="parking_violation">Vi phạm đỗ xe</option>
+                    <option value="helmet_violation">Không đội mũ bảo hiểm</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="color: var(--text); font-size: 12px; display: block; margin-bottom: 5px;">Mức Độ</label>
+                <select id="edit-severity" style="width: 100%; padding: 8px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); box-sizing: border-box;">
+                    <option value="minor">Nhẹ</option>
+                    <option value="moderate">Trung bình</option>
+                    <option value="severe">Nghiêm trọng</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 12px;">
+                <label style="color: var(--text); font-size: 12px; display: block; margin-bottom: 5px;">Vị Trí (GPS)</label>
+                <input type="text" id="edit-location" placeholder="10.7769,106.6966" style="width: 100%; padding: 8px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); box-sizing: border-box;">
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="color: var(--text); font-size: 12px; display: block; margin-bottom: 5px;">Hash Ảnh</label>
+                <input type="text" id="edit-image-hash" placeholder="IPFS hash" style="width: 100%; padding: 8px; background: var(--input-bg); border: 1px solid var(--border); border-radius: 4px; color: var(--text); box-sizing: border-box;">
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button onclick="submitEditedTransaction()" style="flex: 1; padding: 10px; background: var(--green); border: none; border-radius: 4px; color: white; cursor: pointer; font-weight: bold;">💾 Lưu & Gửi Lại</button>
+                <button onclick="closeEditModal()" style="flex: 1; padding: 10px; background: var(--border); border: none; border-radius: 4px; color: var(--text); cursor: pointer;">Hủy</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
